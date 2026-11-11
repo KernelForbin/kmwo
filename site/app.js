@@ -40,10 +40,63 @@
       : w > P.WEEKS ? "Plan complete" : "Week " + w + " of " + P.WEEKS;
   }
 
+  function skipIcon() {
+    var s = document.createElementNS(SVGNS, "svg");
+    s.setAttribute("viewBox", "0 0 24 24");
+    s.setAttribute("class", "i skipx");
+    var p = document.createElementNS(SVGNS, "path");
+    p.setAttribute("d", "M6 6l12 12M18 6L6 18");
+    s.appendChild(p);
+    return s;
+  }
+
+  function doneDays() { return Object.keys(logged).filter(function (d) { return logged[d].done; }); }
+  function skippedDays() { return Object.keys(logged).filter(function (d) { return logged[d].done === false; }); }
+
+  /* One tap under the hero: mark the next planned day (or, if you're behind,
+     the latest missed one) as skipped. Undo puts it back. */
+  var undoDay = null;
+  function renderSkip() {
+    var btn = $("skip"), msg = $("skip-msg");
+    if (undoDay) {
+      var nm = P.nice(undoDay);
+      msg.textContent = "Skipped " + (nm === "Today" || nm === "Tomorrow" ? nm.toLowerCase() : nm) + ".";
+      btn.textContent = "Undo";
+      btn.hidden = false;
+      return;
+    }
+    var target = P.skipTarget(doneDays(), skippedDays());
+    msg.textContent = "";
+    btn.hidden = !target;
+    if (target) {
+      btn.textContent = (target < P.today() ? "Mark " + P.nice(target) + " skipped"
+        : "Skip " + (P.nice(target) === "Today" ? "today" : P.nice(target)));
+      btn.dataset.day = target;
+    }
+  }
+  function onSkip() {
+    var btn = $("skip");
+    btn.disabled = true;
+    K.showError("");
+    var op;
+    if (undoDay) {
+      var d = undoDay;
+      op = K.db.from("sessions").delete().eq("day", d).eq("done", false)
+        .then(function (r) { if (r.error) throw r.error; delete logged[d]; undoDay = null; });
+    } else {
+      var day = btn.dataset.day;
+      var row = { day: day, kind: P.plannedKind(day) || "ride", done: false, short: false };
+      op = K.db.from("sessions").upsert(row, { onConflict: "user_id,day" })
+        .then(function (r) { if (r.error) throw r.error; logged[day] = row; undoDay = day; });
+    }
+    op.then(render, function (e) { K.showError(e.message || String(e)); })
+      .then(function () { btn.disabled = false; });
+  }
+
   function renderNext() {
-    var doneDays = Object.keys(logged).filter(function (d) { return logged[d].done; });
-    var doneCount = doneDays.filter(P.inPlan).length;
-    var n = P.nextUp(doneDays);
+    var done = doneDays();
+    var doneCount = done.filter(P.inPlan).length;
+    var n = P.nextUp(done, skippedDays());
     var box = $("next");
     $("next-meter").style.width = Math.min(100, doneCount / P.TOTAL * 100) + "%";
     if (!n) {
@@ -125,7 +178,8 @@
     var planned = days.filter(function (d) { return P.plannedKind(d); }).length;
     if (planned) {
       var done = days.filter(function (d) { return P.inPlan(d) && logged[d] && logged[d].done; }).length;
-      bits.push(done + " of " + planned + " sessions");
+      var skips = days.filter(function (d) { return P.inPlan(d) && logged[d] && logged[d].done === false; }).length;
+      bits.push(done + " of " + planned + " sessions" + (skips ? ", " + skips + " skipped" : ""));
     }
     $("monthstats").textContent = bits.join(" · ") || "Nothing logged";
 
@@ -141,15 +195,17 @@
       var log = logged[day];
       var kind = log ? log.kind : plannedKind;
       var isDone = !!(log && log.done);
-      var missed = plannedKind && !isDone && day < t;
+      var isSkipped = !!(log && log.done === false);
+      var missed = plannedKind && !isDone && !isSkipped && day < t;
       var steps = daily[day] && daily[day].steps;
 
       var el = document.createElement("a");
       el.href = "/day?d=" + day;
-      el.className = "cell " + (kind || "off") + (isDone ? " done" : "") +
+      el.className = "cell " + (kind || "off") + (isDone ? " done" : "") + (isSkipped ? " skipped" : "") +
         (missed ? " missed" : "") + (day < t ? " past" : "") + (day === t ? " today" : "") +
         (day > t ? " future" : "");
-      var label = P.nice(day) + (kind ? ", " + P.label(kind) : "") + (isDone ? ", done" : missed ? ", missed" : "");
+      var label = P.nice(day) + (kind ? ", " + P.label(kind) : "") +
+        (isDone ? ", done" : isSkipped ? ", skipped" : missed ? ", missed" : "");
 
       var num = document.createElement("b");
       num.textContent = Number(day.slice(8));
@@ -162,6 +218,8 @@
           s.textContent = "10m";
           el.appendChild(s);
         }
+      } else if (isSkipped) {
+        el.appendChild(skipIcon());
       } else {
         var dot = document.createElement("i");
         dot.className = "dot";
@@ -196,6 +254,7 @@
   function render() {
     renderMonth();
     renderNext();
+    renderSkip();
     renderToday();
   }
 
@@ -224,6 +283,7 @@
     shown = monthOf(P.today()) < FIRST_MONTH ? FIRST_MONTH : monthOf(P.today());
     $("prev").addEventListener("click", function () { go(-1); });
     $("nextm").addEventListener("click", function () { go(1); });
+    $("skip").addEventListener("click", onSkip);
     // Swipe left/right on the calendar to change month.
     var cal = document.querySelector(".cal"), x0 = null, y0 = null;
     cal.addEventListener("touchstart", function (e) { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });

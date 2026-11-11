@@ -31,14 +31,16 @@
   <h1 id="title"></h1>
   <p class="muted" id="planned"></p>
 
-  <div class="seg three" role="radiogroup" aria-label="Plan session">
+  <div class="seg four" role="radiogroup" aria-label="Plan session">
     <button type="button" data-kind="lift" role="radio">Lift</button>
     <button type="button" data-kind="ride" role="radio">Ride</button>
+    <button type="button" data-kind="skip" role="radio">Skipped</button>
     <button type="button" data-kind="none" role="radio">None</button>
   </div>
 
   <div id="plansection">
-  <div class="toggle-card">
+  <p class="muted small skip-desc" id="skip-desc" hidden></p>
+  <div class="toggle-card" id="shortcard">
     <label class="check" style="margin:0">
       <input type="checkbox" id="short">
       <span><strong>Short on time</strong> <span class="muted">· 10-minute home version</span></span>

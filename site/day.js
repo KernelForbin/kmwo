@@ -279,7 +279,13 @@
 
   function saveLabel() {
     var any = existing || hadExtras;
-    $("save").textContent = any ? "Save changes" : (kind === "none" ? "Save" : "Save and mark done");
+    $("save").textContent = kind === "skip" ? "Mark skipped"
+      : any ? "Save changes" : (kind === "none" ? "Save" : "Save and mark done");
+  }
+
+  // The session a skip stands in for: the planned one, else what was logged.
+  function skipKind() {
+    return P.plannedKind(day) || (existing && existing.kind) || (params.get("k") === "lift" ? "lift" : "ride");
   }
 
   function setKind(k) {
@@ -290,7 +296,15 @@
       b.setAttribute("aria-checked", on ? "true" : "false");
     });
     var short = $("short").checked;
+    var skip = k === "skip";
     $("plansection").hidden = k === "none";
+    $("skip-desc").hidden = !skip;
+    if (skip) {
+      $("skip-desc").textContent = "No session this day. The next one is still a " +
+        P.label(skipKind()).toLowerCase() + ": a skip doesn't move the sequence.";
+    }
+    $("note").placeholder = skip ? "Why? (optional)" : "How did it feel?";
+    $("shortcard").hidden = skip;
     $("short-desc").hidden = !short;
     $("lift").hidden = k !== "lift" || short;
     $("ride").hidden = k !== "ride" || short;
@@ -366,7 +380,7 @@
       }).sort(function (a, b) { return a.day < b.day ? 1 : -1; })[0];
       var startKind;
       if (existing) {
-        startKind = existing.kind;
+        startKind = existing.done === false ? "skip" : existing.kind;
         $("short").checked = !!existing.short;
         $("note").value = existing.note || "";
         $("ride-min").value = existing.ride_minutes || P.rideMinutes(week);
@@ -395,12 +409,17 @@
     var db = K.db;
     var short = $("short").checked;
     var plan = kind !== "none";
-    var row = plan ? {
+    var skip = kind === "skip";
+    // A skipped day is a sessions row with done = false.
+    var row = !plan ? null : skip ? {
+      day: day, kind: skipKind(), done: false, short: false,
+      note: $("note").value.trim() || null, ride_minutes: null, ride_type: null
+    } : {
       day: day, kind: kind, done: true, short: short,
       note: $("note").value.trim() || null,
       ride_minutes: kind === "ride" && !short ? num($("ride-min").value) : null,
       ride_type: kind === "ride" && !short ? $("ride-type").value : null
-    } : null;
+    };
     var setRows = [];
     if (kind === "lift" && !short) {
       P.EXERCISES.forEach(function (ex) {

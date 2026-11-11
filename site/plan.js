@@ -80,30 +80,43 @@ window.KMWO_PLAN = (function () {
     return out;
   }
 
-  /* What to do next, given the days with a done session.
-     Kind: the next in the sequence. When: today if today is a planned day,
-     or if you're behind (fewer done than planned so far); otherwise the next
-     planned day. Returns null once all sessions are done. */
-  function nextUp(doneDays) {
+  /* What to do next, given the days with a done session and the days marked
+     skipped. Kind: the next in the sequence (a skip doesn't move it). When:
+     today if today is a planned day not yet done or skipped, or if you're
+     behind (fewer done than planned-and-not-skipped so far); otherwise the
+     next planned day not skipped. Returns null once all sessions are done. */
+  function nextUp(doneDays, skippedDays) {
     var t = today();
     var done = doneDays.filter(inPlan);
+    var skipped = (skippedDays || []).filter(inPlan);
     if (done.length >= TOTAL) return null;
     var kind = PATTERN[done.length % PATTERN.length];
-    var planned = scheduledDays();
+    var planned = scheduledDays().filter(function (d) { return skipped.indexOf(d) === -1; });
     var when;
     if (t < START) {
-      when = START;
+      when = planned[0] || START;
     } else {
-      var todayDone = done.indexOf(t) !== -1;
+      var handled = done.indexOf(t) !== -1 || skipped.indexOf(t) !== -1;
       var plannedBefore = planned.filter(function (d) { return d < t; }).length;
       var doneBefore = done.filter(function (d) { return d < t; }).length;
-      if (!todayDone && (plannedKind(t) || plannedBefore > doneBefore)) {
+      if (!handled && (plannedKind(t) || plannedBefore > doneBefore)) {
         when = t;
       } else {
         when = planned.find(function (d) { return d > t; }) || fmtDay(addDays(parseDay(t), 1));
       }
     }
     return { kind: kind, day: when, week: weekOf(when), number: done.length + 1 };
+  }
+
+  /* The planned day a one-tap "Skip" applies to: the next-up day if it's a
+     planned day, else (you're behind) the latest missed planned day. */
+  function skipTarget(doneDays, skippedDays) {
+    var n = nextUp(doneDays, skippedDays);
+    if (!n) return null;
+    var open = function (d) { return doneDays.indexOf(d) === -1 && (skippedDays || []).indexOf(d) === -1; };
+    if (plannedKind(n.day) && open(n.day)) return n.day;
+    var t = today();
+    return scheduledDays().filter(function (d) { return d < t && open(d); }).pop() || null;
   }
 
   function label(kind) { return kind === "lift" ? "Lift" : "Ride"; }
@@ -121,6 +134,6 @@ window.KMWO_PLAN = (function () {
     parseDay: parseDay, fmtDay: fmtDay, addDays: addDays, today: today, isDay: isDay,
     inPlan: inPlan, weekday: weekday, plannedKind: plannedKind, weekOf: weekOf,
     setsFor: setsFor, rideMinutes: rideMinutes, describe: describe,
-    scheduledDays: scheduledDays, nextUp: nextUp, label: label, md: md, nice: nice
+    scheduledDays: scheduledDays, nextUp: nextUp, skipTarget: skipTarget, label: label, md: md, nice: nice
   };
 })();

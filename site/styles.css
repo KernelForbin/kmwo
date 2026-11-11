@@ -184,6 +184,10 @@ main.center .primary { margin-top: 14px; min-width: 240px; }
 .addrow.today .chip.set { background: var(--surface-2); border-color: var(--line); }
 .addrow.today .chip.steps.set { color: var(--accent-2); }
 .addrow.today .chip.workout.set { color: var(--other); }
+.addrow.today .chip.session.lift.set { color: var(--lift); background: color-mix(in srgb, var(--lift) 16%, transparent); border-color: transparent; }
+.addrow.today .chip.session.ride.set { color: var(--ride); background: color-mix(in srgb, var(--ride) 16%, transparent); border-color: transparent; }
+.addrow.today .chip.session.skipped { color: var(--muted); }
+.addrow.today .chip.session .tick { width: 15px; height: 15px; stroke-width: 3; }
 .legend .dot.missed { box-shadow: inset 0 0 0 1.5px var(--muted); }
 
 /* day log */

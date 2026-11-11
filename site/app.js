@@ -118,18 +118,43 @@
     box.href = "/day?d=" + n.day + "&k=" + n.kind;
   }
 
-  // Today strip: steps, weight and other workouts for today, each a quick add.
+  // Today's plan session as a chip: done (with minutes), skipped, or still to do.
+  function sessionChip(t) {
+    var log = logged[t];
+    var kind = log ? log.kind : P.plannedKind(t);
+    if (!kind) return null;
+    var name = P.label(kind);
+    if (log && log.done) {
+      var extra = log.short ? " · 10 min" : (kind === "ride" && log.ride_minutes ? " · " + log.ride_minutes + " min" : "");
+      return { cls: kind, set: true, done: true, href: "/day?d=" + t, text: name + extra };
+    }
+    if (log) return { cls: "skipped", set: true, href: "/day?d=" + t, text: name + " skipped" };
+    return { cls: kind, set: false, href: "/day?d=" + t + "&k=" + kind, text: name };
+  }
+
+  // Today strip: the plan session, steps, weight and other workouts for
+  // today, each a quick add.
   function renderToday() {
     var t = P.today();
     var d = daily[t] || {};
     var acts = extras[t] || [];
+    var host = $("today");
+    host.textContent = "";
+    var sc = sessionChip(t);
+    if (sc) {
+      var a0 = document.createElement("a");
+      a0.className = "chip session " + sc.cls + (sc.set ? " set" : " add");
+      a0.href = sc.href;
+      if (sc.done) a0.appendChild(tick());
+      else if (!sc.set) a0.innerHTML = '<svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>';
+      a0.appendChild(document.createTextNode(sc.text));
+      host.appendChild(a0);
+    }
     var chips = [
       { add: "steps", set: d.steps != null, text: d.steps != null ? Number(d.steps).toLocaleString() + " steps" : "Steps" },
       { add: "weight", set: d.body_weight != null, text: d.body_weight != null ? Number(d.body_weight) + " lb" : "Weight" },
       { add: "workout", set: acts.length > 0, text: acts.length ? acts.join(", ") : "Workout" }
     ];
-    var host = $("today");
-    host.textContent = "";
     chips.forEach(function (c) {
       var a = document.createElement("a");
       a.className = "chip " + c.add + (c.set ? " set" : " add");
@@ -260,7 +285,7 @@
 
   function load() {
     return Promise.all([
-      K.db.from("sessions").select("day, kind, done, short"),
+      K.db.from("sessions").select("day, kind, done, short, ride_minutes"),
       K.db.from("activities").select("day, name"),
       K.db.from("daily").select("day, steps, body_weight").gte("day", FIRST_MONTH + "-01")
     ]).then(function (res) {

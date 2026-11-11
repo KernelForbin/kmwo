@@ -1,4 +1,6 @@
 -- Run in Supabase: SQL Editor -> paste -> Run. Safe to run more than once.
+-- (v3: fixes "column reference f is ambiguous". To check which version is
+-- live: select prosrc like '%parts_arr%' from pg_proc where proname = 'health_sync';)
 -- Steps were doubled: the Shortcut's "Group By Day" adds iPhone and Apple
 -- Watch counts together. The Shortcut now sends raw step samples
 --   start|end|steps|source      e.g. 2026-11-10 07:15:00|2026-11-10 07:22:41|612|Kenneth's Apple Watch
@@ -18,6 +20,7 @@ create or replace function public.health_sync(
 returns jsonb
 language plpgsql security definer set search_path = public
 as $$
+#variable_conflict use_column
 declare
   uid  uuid;
   line text;

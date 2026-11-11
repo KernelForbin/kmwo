@@ -15,13 +15,17 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<script src="theme.js"></script>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <main id="app" hidden>
-  <a href="/" class="back">
-    <svg class="i" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>Calendar
-  </a>
+  <div class="navrow">
+    <a href="/" class="back">
+      <svg class="i" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>Calendar
+    </a>
+    <div class="account" id="account"></div>
+  </div>
   <p class="eyebrow" id="weeklabel"></p>
   <h1 id="title"></h1>
   <p class="muted" id="planned"></p>
@@ -78,6 +82,7 @@
         integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous"></script>
 <script src="config.js"></script>
 <script src="auth.js"></script>
+<script src="menu.js"></script>
 <script src="plan.js"></script>
 <script src="day.js"></script>
 </body>

@@ -50,7 +50,7 @@
     var inp = document.createElement("input");
     inp.type = "number"; inp.inputMode = decimal ? "decimal" : "numeric";
     inp.min = String(min); inp.max = String(max); inp.step = decimal ? "0.5" : "1";
-    inp.placeholder = "–"; inp.setAttribute("aria-label", label);
+    inp.placeholder = decimal ? "lb" : "reps"; inp.setAttribute("aria-label", label);
     inp.value = value == null ? "" : value;
     inp.addEventListener("input", function () { onChange(num(inp.value)); });
     function bump(d) {

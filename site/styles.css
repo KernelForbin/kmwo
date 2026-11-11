@@ -1,4 +1,7 @@
-/* kmwo design tokens. Dark first; light follows the system setting. */
+/* kmwo design tokens. Dark first. With no saved choice, light follows the
+   system setting; a choice from the account menu sets data-theme on <html>
+   (theme.js) and wins over the system. The light block appears twice
+   because CSS can't share one block between a media query and a selector. */
 :root {
   --bg: #0b0d10;
   --surface: #14171c;
@@ -20,7 +23,7 @@
   color-scheme: dark;
 }
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not([data-theme="dark"]) {
     --bg: #f3f4f7;
     --surface: #ffffff;
     --surface-2: #f0f2f6;
@@ -37,6 +40,23 @@
     --shadow: 0 1px 2px rgba(15, 20, 30, .05), 0 8px 24px rgba(15, 20, 30, .06);
     color-scheme: light;
   }
+}
+:root[data-theme="light"] {
+  --bg: #f3f4f7;
+  --surface: #ffffff;
+  --surface-2: #f0f2f6;
+  --line: rgba(15, 20, 30, .08);
+  --line-strong: rgba(15, 20, 30, .16);
+  --fg: #10141b;
+  --muted: #5d6675;
+  --lift: #2f66f0;
+  --ride: #0c9a78;
+  --accent: #2f66f0;
+  --accent-2: #6a4cf0;
+  --danger: #d43c3c;
+  --nudge: #9a5b00;
+  --shadow: 0 1px 2px rgba(15, 20, 30, .05), 0 8px 24px rgba(15, 20, 30, .06);
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -227,6 +247,41 @@ summary { cursor: pointer; color: var(--muted); font-weight: 600; }
 table { border-collapse: collapse; width: 100%; margin-top: 8px; }
 th, td { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
 th { color: var(--muted); font-weight: 600; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; }
+
+/* account menu (menu.js) */
+.account { position: relative; flex: none; }
+.avatar {
+  width: 42px; height: 42px; padding: 0; border-radius: 50%; border: 0; display: grid; place-items: center;
+  font-weight: 700; font-size: .9rem; letter-spacing: .02em; color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.avatar[aria-expanded="true"] { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent); }
+.menu {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 20; min-width: 248px;
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: 16px; padding: 6px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .35); transform-origin: top right; animation: menu-in .14s ease-out;
+}
+@keyframes menu-in { from { opacity: 0; transform: scale(.96) translateY(-4px); } }
+.menu-head { padding: 10px 12px 12px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.menu-head strong { display: block; font-size: .95rem; }
+.menu-head span { display: block; font-size: .8rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+.menu-item {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  background: transparent; border: 0; border-radius: 10px; padding: 11px 12px; font-weight: 500; font-size: .92rem; color: var(--fg);
+}
+.menu-item:hover, .menu-item:focus-visible { background: var(--surface-2); outline: none; }
+.menu-item:active { transform: none; }
+.menu-item svg { color: var(--muted); flex: none; }
+.menu-item .grow { flex: 1; }
+.menu-item.danger { color: var(--danger); }
+.menu-item.danger svg { color: var(--danger); }
+.switch { width: 40px; height: 24px; border-radius: 999px; background: var(--line-strong); position: relative; flex: none; transition: background .2s; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .3); transition: transform .2s; }
+.menu-item[aria-checked="true"] .switch { background: var(--accent); }
+.menu-item[aria-checked="true"] .switch::after { transform: translateX(16px); }
+.navrow { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.navrow .back { margin-bottom: 0; }
 
 /* bottom tabs */
 .tabs {

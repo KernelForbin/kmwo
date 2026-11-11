@@ -1,16 +1,21 @@
-/* kmwo: home. Next up hero and the 8-week calendar; any day opens /day?d=... */
+/* kmwo: home. Next up hero, a Today strip, and a month calendar (‹ › or
+   swipe, back to Jan 2026) with plan sessions, extras and daily steps.
+   Any day opens /day?d=... */
 (function () {
   "use strict";
 
   var P = window.KMWO_PLAN;
   var K = window.KMWO;
   var $ = function (id) { return document.getElementById(id); };
-  var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  var MONTHS = ["January", "February", "March", "April", "May", "June", "July",
+    "August", "September", "October", "November", "December"];
   var SVGNS = "http://www.w3.org/2000/svg";
+  var FIRST_MONTH = "2026-01";
 
   var logged = {}; // day -> { kind, done, short }
   var extras = {}; // day -> [other workout names]
-  var daily = {};  // day -> { steps, body_weight } (today only)
+  var daily = {};  // day -> { steps, body_weight }
+  var shown = null; // "YYYY-MM" on screen
 
   function tick() {
     var s = document.createElementNS(SVGNS, "svg");
@@ -83,73 +88,122 @@
     });
   }
 
-  function renderCalendar() {
+  /* ---- month calendar ---- */
+
+  function monthOf(day) { return day.slice(0, 7); }
+  function lastMonth() {
+    var a = monthOf(P.today()), b = monthOf(P.END);
+    return a > b ? a : b;
+  }
+  function shiftMonth(m, n) {
+    var y = Number(m.slice(0, 4)), mo = Number(m.slice(5, 7)) - 1 + n;
+    y += Math.floor(mo / 12); mo = ((mo % 12) + 12) % 12;
+    return y + "-" + String(mo + 1).padStart(2, "0");
+  }
+  function kSteps(n) {
+    return n >= 9950 ? Math.round(n / 1000) + "k" : n >= 1000 ? (Math.round(n / 100) / 10) + "k" : String(n);
+  }
+
+  function renderMonth() {
+    var m = shown;
+    var y = Number(m.slice(0, 4)), mo = Number(m.slice(5, 7)) - 1;
     var t = P.today();
-    var cw = currentWeek();
+    $("month").textContent = MONTHS[mo] + " " + y;
+    $("prev").disabled = m <= FIRST_MONTH;
+    $("nextm").disabled = m >= lastMonth();
+
+    // Month line: average steps, and plan sessions done of planned.
+    var days = [];
+    var len = new Date(y, mo + 1, 0).getDate();
+    for (var i = 1; i <= len; i++) days.push(m + "-" + String(i).padStart(2, "0"));
+    var withSteps = days.filter(function (d) { return daily[d] && daily[d].steps != null; });
+    var bits = [];
+    if (withSteps.length) {
+      var avg = Math.round(withSteps.reduce(function (s, d) { return s + daily[d].steps; }, 0) / withSteps.length);
+      bits.push(avg.toLocaleString() + " avg steps");
+    }
+    var planned = days.filter(function (d) { return P.plannedKind(d); }).length;
+    if (planned) {
+      var done = days.filter(function (d) { return P.inPlan(d) && logged[d] && logged[d].done; }).length;
+      bits.push(done + " of " + planned + " sessions");
+    }
+    $("monthstats").textContent = bits.join(" · ") || "Nothing logged";
+
     var host = $("weeks");
     host.textContent = "";
-    var start = P.parseDay(P.START);
-    for (var w = 0; w < P.WEEKS; w++) {
-      var wk = document.createElement("div");
-      wk.className = "wk" + (cw === w + 1 ? " cur" : "");
-      var ws = P.addDays(start, w * 7), we = P.addDays(start, w * 7 + 6);
-      wk.textContent = "Week " + (w + 1) + "  ·  " + MONTHS[ws.getMonth()] + " " + ws.getDate() + " – " +
-        (we.getMonth() !== ws.getMonth() ? MONTHS[we.getMonth()] + " " : "") + we.getDate();
-      host.appendChild(wk);
+    var grid = document.createElement("div");
+    grid.className = "grid month";
+    var lead = (new Date(y, mo, 1).getDay() + 6) % 7; // Monday first
+    for (var b = 0; b < lead; b++) grid.appendChild(document.createElement("span"));
 
-      var row = document.createElement("div");
-      row.className = "grid";
-      for (var d = 0; d < 7; d++) {
-        var date = P.addDays(start, w * 7 + d);
-        var day = P.fmtDay(date);
-        var planned = P.plannedKind(day);
-        var log = logged[day];
-        var kind = log ? log.kind : planned;
-        var isDone = !!(log && log.done);
-        var missed = planned && !isDone && day < t;
+    days.forEach(function (day) {
+      var plannedKind = P.plannedKind(day);
+      var log = logged[day];
+      var kind = log ? log.kind : plannedKind;
+      var isDone = !!(log && log.done);
+      var missed = plannedKind && !isDone && day < t;
+      var steps = daily[day] && daily[day].steps;
 
-        var el = document.createElement("a");
-        el.href = "/day?d=" + day;
-        el.className = "cell " + (kind || "off") + (isDone ? " done" : "") +
-          (missed ? " missed" : "") + (day < t ? " past" : "") + (day === t ? " today" : "");
-        el.setAttribute("aria-label", P.nice(day) + (kind ? ", " + P.label(kind) : "") +
-          (isDone ? ", done" : missed ? ", missed" : ""));
+      var el = document.createElement("a");
+      el.href = "/day?d=" + day;
+      el.className = "cell " + (kind || "off") + (isDone ? " done" : "") +
+        (missed ? " missed" : "") + (day < t ? " past" : "") + (day === t ? " today" : "") +
+        (day > t ? " future" : "");
+      var label = P.nice(day) + (kind ? ", " + P.label(kind) : "") + (isDone ? ", done" : missed ? ", missed" : "");
 
-        var b = document.createElement("b");
-        b.textContent = date.getDate();
-        el.appendChild(b);
-        if (isDone) {
-          el.appendChild(tick());
-          if (log.short) {
-            var s = document.createElement("span");
-            s.className = "short";
-            s.textContent = "10m";
-            el.appendChild(s);
-          }
-        } else {
-          var dot = document.createElement("i");
-          dot.className = "dot";
-          el.appendChild(dot);
+      var num = document.createElement("b");
+      num.textContent = Number(day.slice(8));
+      el.appendChild(num);
+      if (isDone) {
+        el.appendChild(tick());
+        if (log.short) {
+          var s = document.createElement("span");
+          s.className = "short";
+          s.textContent = "10m";
+          el.appendChild(s);
         }
-        if (extras[day]) {
-          var o = document.createElement("i");
-          o.className = "other";
-          o.title = extras[day].join(", ");
-          el.appendChild(o);
-          el.setAttribute("aria-label", el.getAttribute("aria-label") + ", also " + extras[day].join(", "));
-        }
-        row.appendChild(el);
+      } else {
+        var dot = document.createElement("i");
+        dot.className = "dot";
+        el.appendChild(dot);
       }
-      host.appendChild(row);
-    }
+      if (steps != null) {
+        var st = document.createElement("span");
+        st.className = "steps";
+        st.textContent = kSteps(steps);
+        el.appendChild(st);
+        label += ", " + steps.toLocaleString() + " steps";
+      }
+      if (extras[day]) {
+        var o = document.createElement("i");
+        o.className = "other";
+        el.appendChild(o);
+        label += ", also " + extras[day].join(", ");
+      }
+      el.setAttribute("aria-label", label);
+      grid.appendChild(el);
+    });
+    host.appendChild(grid);
+  }
+
+  function go(n) {
+    var m = shiftMonth(shown, n);
+    if (m < FIRST_MONTH || m > lastMonth()) return;
+    shown = m;
+    renderMonth();
+  }
+
+  function render() {
+    renderMonth();
     renderNext();
+    renderToday();
   }
 
   function load() {
     return Promise.all([
       K.db.from("sessions").select("day, kind, done, short"),
       K.db.from("activities").select("day, name"),
-      K.db.from("daily").select("day, steps, body_weight").gte("day", P.today())
+      K.db.from("daily").select("day, steps, body_weight").gte("day", FIRST_MONTH + "-01")
     ]).then(function (res) {
       var bad = res.find(function (r) { return r.error; });
       if (bad) { K.showError(bad.error.message); return; }
@@ -157,8 +211,7 @@
       res[0].data.forEach(function (r) { logged[r.day] = r; });
       res[1].data.forEach(function (r) { (extras[r.day] = extras[r.day] || []).push(r.name); });
       res[2].data.forEach(function (r) { daily[r.day] = r; });
-      renderCalendar();
-      renderToday();
+      render();
     });
   }
 
@@ -168,9 +221,20 @@
       s.textContent = n.slice(0, 1) === "T" || n.slice(0, 1) === "S" ? n.slice(0, 2) : n.slice(0, 1);
       $("dayhead").appendChild(s);
     });
+    shown = monthOf(P.today()) < FIRST_MONTH ? FIRST_MONTH : monthOf(P.today());
+    $("prev").addEventListener("click", function () { go(-1); });
+    $("nextm").addEventListener("click", function () { go(1); });
+    // Swipe left/right on the calendar to change month.
+    var cal = document.querySelector(".cal"), x0 = null, y0 = null;
+    cal.addEventListener("touchstart", function (e) { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+    cal.addEventListener("touchend", function (e) {
+      if (x0 == null) return;
+      var dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+      x0 = null;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) go(dx < 0 ? 1 : -1);
+    });
     renderHeader();
-    renderCalendar();
-    renderToday();
+    render();
     load();
   });
 })();

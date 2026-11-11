@@ -16,10 +16,13 @@
 
   var ICONS = {
     moon: "M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z",
-    out: "M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H3"
+    out: "M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H3",
+    heart: "M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"
   };
 
   var ITEMS = [
+    { label: "Health sync", icon: ICONS.heart,
+      onClick: function () { location.href = "/sync"; } },
     { label: "Dark mode", icon: ICONS.moon,
       checked: function () { return T ? T.isDark() : true; },
       onToggle: function (on) { if (T) T.set(on ? "dark" : "light"); } },

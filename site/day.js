@@ -193,7 +193,7 @@
     var host = $("extras");
     host.textContent = "";
     workouts.forEach(function (w, i) {
-      host.appendChild(extraCard(w.name, "Minutes",
+      host.appendChild(extraCard(w.name, w.source === "health" ? "Minutes · from Health" : "Minutes",
         stepper({ value: w.minutes, step: 5, min: 1, max: 600, placeholder: "min",
           label: w.name + " minutes", onChange: function (v) { w.minutes = v; } }),
         function () { workouts.splice(i, 1); renderExtras(); }, "other"));
@@ -321,7 +321,7 @@
         .order("day", { ascending: false }).limit(200),
       db.from("daily").select("day, steps, body_weight").lte("day", day)
         .order("day", { ascending: false }).limit(120),
-      db.from("activities").select("day, name, minutes").order("day", { ascending: false }).limit(500),
+      db.from("activities").select("day, name, minutes, source, external_id").order("day", { ascending: false }).limit(500),
       db.from("workout_types").select("name").order("created_at")
     ]).then(function (res) {
       var sessions = must(res[0]);
@@ -350,7 +350,8 @@
       if (lw) lastWeigh = { day: lw.day, value: Number(lw.body_weight) };
 
       acts.forEach(function (a) {
-        if (a.day === day) workouts.push({ name: a.name, minutes: a.minutes });
+        // Keep a synced workout's Health id so the next sync updates it, not adds a copy.
+        if (a.day === day) workouts.push({ name: a.name, minutes: a.minutes, source: a.source, external_id: a.external_id });
         else if (lastMinutes[a.name] == null && a.minutes != null && a.day < day) lastMinutes[a.name] = a.minutes;
         if (known.indexOf(a.name) === -1) known.push(a.name);
       });
@@ -412,7 +413,8 @@
     var st = steps.on ? steps.value : null;
     var bw = weight.on ? weight.value : null;
     var actRows = workouts.map(function (w) {
-      return { day: day, name: w.name, minutes: w.minutes == null ? null : Math.round(w.minutes) };
+      return { day: day, name: w.name, minutes: w.minutes == null ? null : Math.round(w.minutes),
+        source: w.source || null, external_id: w.external_id || null };
     });
     // Names not in the starter list or already saved get saved for next time.
     var newTypes = [];

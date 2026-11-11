@@ -50,6 +50,13 @@
 
   <h2>Calendar</h2>
   <div class="cal">
+    <div class="cal-head">
+      <button type="button" class="iconbtn" id="prev" aria-label="Previous month">
+        <svg class="i" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <div class="cal-title"><strong id="month"></strong><span class="muted small" id="monthstats"></span></div>
+      <button type="button" class="iconbtn" id="nextm" aria-label="Next month">
+        <svg class="i" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
     <div class="grid head" id="dayhead"></div>
     <div id="weeks"></div>
   </div>

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d10">
+<title>Health sync · kmwo</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="kmwo">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<script src="theme.js"></script>
+<script src="splash.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main id="app" hidden>
+  <div class="navrow">
+    <a href="/" class="back">
+      <svg class="i" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>Calendar
+    </a>
+    <div class="account" id="account"></div>
+  </div>
+  <p class="eyebrow">Apple Health</p>
+  <h1>Health sync</h1>
+  <p class="muted">An iPhone Shortcut sends your steps, weigh-ins and workouts (Peloton classes included) from Apple Health to kmwo every morning.</p>
+
+  <p class="error" id="err" hidden></p>
+
+  <div class="card" id="status"></div>
+
+  <h2>1 &middot; Sync key</h2>
+  <div class="card">
+    <p class="muted small">The Shortcut uses this key to add data to your log. It can&rsquo;t read anything. It&rsquo;s shown once; making a new one stops the old one working.</p>
+    <div id="keybox" hidden>
+      <div class="copyrow"><code id="key"></code><button type="button" class="copy" data-copy="key">Copy</button></div>
+      <p class="nudge small">Copy it into the Shortcut now. It won&rsquo;t be shown again.</p>
+    </div>
+    <button type="button" class="primary" id="makekey">Create sync key</button>
+  </div>
+
+  <h2>2 &middot; Build the Shortcut</h2>
+  <div class="card steps-guide">
+    <p class="muted small">In the Shortcuts app, tap <b>+</b> and name it <b>kmwo sync</b>. Add these actions in order. To use a property like <i>Start Date</i>, tap the <i>Repeat Item</i> variable and pick it from the list.</p>
+    <ol>
+      <li><b>Steps.</b> <i>Find Health Samples</i>: Type <b>Steps</b>, filter <b>Start Date is in the last 7 days</b>, Group By <b>Day</b>.</li>
+      <li><i>Repeat with Each</i> item in Health Samples. Inside it:
+        <ul>
+          <li><i>Format Date</i>: Repeat Item &rsaquo; Start Date, Date Format <b>Custom</b> <code>yyyy-MM-dd</code></li>
+          <li><i>Text</i>: <code>Formatted Date|Value</code> (Formatted Date, a <code>|</code>, then Repeat Item &rsaquo; Value)</li>
+        </ul></li>
+      <li>After <i>End Repeat</i>: <i>Combine Text</i> Repeat Results with <b>New Lines</b>, then <i>Set Variable</i> <b>Steps</b>.</li>
+      <li><b>Weight.</b> Same three steps with Type <b>Weight</b>, Start Date in the last <b>365 days</b>, and no Group By. Set Variable <b>Weights</b>. (A year, so weigh-ins from your scale app fill in your history.)</li>
+      <li><b>Workouts.</b> <i>Find Health Samples</i>: Type <b>Workouts</b>, Start Date in the last 7 days. <i>Repeat with Each</i>, and inside it:
+        <ul>
+          <li><i>Format Date</i>: Start Date, Custom <code>yyyy-MM-dd HH:mm</code></li>
+          <li><i>Get Time Between Dates</i>: Start Date and End Date, in <b>Minutes</b></li>
+          <li><i>Text</i>: <code>Formatted Date|Type|Time Between Dates</code> (Type is the workout type, e.g. Walking)</li>
+        </ul>
+        Then <i>Combine Text</i> with New Lines and Set Variable <b>Workouts</b>.</li>
+      <li><i>Get Contents of URL</i>:
+        <div class="copyrow"><code id="url"></code><button type="button" class="copy" data-copy="url">Copy</button></div>
+        Method <b>POST</b>. Headers: <code>apikey</code> =
+        <div class="copyrow"><code id="apikey"></code><button type="button" class="copy" data-copy="apikey">Copy</button></div>
+        and <code>Content-Type</code> = <code>application/json</code>. Request Body <b>JSON</b>, four Text fields:
+        <code>p_key</code> = your sync key, <code>p_steps</code> = Steps, <code>p_weights</code> = Weights, <code>p_workouts</code> = Workouts.</li>
+      <li>Optional: <i>Show Notification</i> with Contents of URL, to see what synced.</li>
+    </ol>
+    <p class="muted small">Run it once by hand. Allow it to read Health and to connect to supabase.co. The top of this page should then show the sync.</p>
+  </div>
+
+  <h2>3 &middot; Run it every morning</h2>
+  <div class="card steps-guide">
+    <ol>
+      <li>Shortcuts &rsaquo; <b>Automation</b> &rsaquo; <b>+</b> &rsaquo; <b>Alarm</b> &rsaquo; <b>Is Stopped</b> (or <b>Charger</b> &rsaquo; Is Disconnected).</li>
+      <li>Choose <b>Run Immediately</b>, then pick <b>kmwo sync</b>.</li>
+    </ol>
+    <p class="muted small">iPhone only lets Shortcuts read Health while the phone is unlocked, so a morning trigger works better than a set time overnight. Each run re-sends the last 7 days, so a missed morning catches up the next day.</p>
+  </div>
+
+  <h2>Good to know</h2>
+  <div class="card">
+    <ul class="small">
+      <li>Synced steps and weigh-ins replace that day&rsquo;s values.</li>
+      <li>A Peloton ride or strength class on a day you logged a Ride or Lift is skipped, so it isn&rsquo;t counted twice.</li>
+      <li>If you remove a synced workout from a day, it comes back on the next sync while it&rsquo;s within the last 7 days.</li>
+    </ul>
+  </div>
+</main>
+
+<main id="gate" class="center">
+  <img class="brand" src="icon.svg" alt="">
+  <h1>kmwo</h1>
+  <p class="muted" id="gate-msg">Loading&hellip;</p>
+  <button type="button" class="primary" id="signin" hidden>Sign in with Google</button>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"
+        integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous"></script>
+<script src="config.js"></script>
+<script src="auth.js"></script>
+<script src="menu.js"></script>
+<script src="plan.js"></script>
+<script src="sync.js"></script>
+</body>
+</html>

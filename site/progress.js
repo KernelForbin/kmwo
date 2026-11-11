@@ -226,13 +226,41 @@
 
   /* ---- body weight check-ins ---- */
 
-  function renderBody(daily) {
+  function renderBody(daily, goal) {
     var pts = daily.filter(function (r) { return r.body_weight != null; })
       .map(function (r) { return { day: r.day, top: Number(r.body_weight) }; });
     var host = $("bodyweight");
     host.textContent = "";
-    host.appendChild(lineCard(!pts.length ? "Weigh-ins" : pts.length + (pts.length === 1 ? " weigh-in" : " weigh-ins"), pts,
-      { empty: "No weigh-ins yet. Add one from any day.", pad: 2, decimals: true, cols: ["Date", "lb"] }));
+    var card = lineCard(!pts.length ? "Weigh-ins" : pts.length + (pts.length === 1 ? " weigh-in" : " weigh-ins"), pts,
+      { empty: "No weigh-ins yet. Add one from any day, or sync them from Apple Health.", pad: 2, decimals: true, cols: ["Date", "lb"] });
+
+    // Goal line: latest weight against the goal, with a button to change it.
+    var row = el("div", "goalrow");
+    var txt = el("span", "small");
+    var last = pts.length ? pts[pts.length - 1].top : null;
+    if (goal == null) {
+      txt.className = "muted small";
+      txt.textContent = "No goal set.";
+    } else {
+      var left = last == null ? null : Math.round((last - goal) * 10) / 10;
+      txt.appendChild(el("strong", null, "Goal " + goal + " lb"));
+      txt.appendChild(document.createTextNode(
+        left == null ? "" : left > 0 ? " · " + left + " lb to go" : " · reached"));
+    }
+    var btn = el("button", "link", goal == null ? "Set goal" : "Change");
+    btn.type = "button";
+    btn.addEventListener("click", function () {
+      var v = prompt("Goal body weight (lb). Leave empty to clear.", goal == null ? "" : goal);
+      if (v === null) return;
+      var n = v.trim() === "" ? null : Number(v);
+      if (n != null && !(n >= 50 && n <= 700)) { K.showError("Enter a weight between 50 and 700 lb."); return; }
+      K.db.from("profile").upsert({ weight_goal: n, updated_at: new Date().toISOString() }, { onConflict: "user_id" })
+        .then(function (r) { if (r.error) throw r.error; renderBody(daily, n); })
+        .catch(function (e) { K.showError(e.message || String(e)); });
+    });
+    row.append(txt, btn);
+    card.insertBefore(row, card.children[1]);
+    host.appendChild(card);
   }
 
   /* ---- steps: the last 14 days ---- */
@@ -296,6 +324,70 @@
     host.append(svg, note);
   }
 
+  /* ---- steps: daily average per month, Jan 2026 on ---- */
+
+  function renderMonthly(daily) {
+    var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    var sums = {};
+    daily.forEach(function (r) {
+      if (r.steps == null || r.day < "2026-01-01") return;
+      var m = r.day.slice(0, 7);
+      var g = sums[m] = sums[m] || { n: 0, total: 0 };
+      g.n++; g.total += r.steps;
+    });
+    var months = Object.keys(sums).sort().slice(-12);
+    var host = $("stepsmonthly");
+    host.textContent = "";
+    var head = el("div", "ex-head");
+    head.appendChild(el("h3", null, "Daily average by month"));
+    host.appendChild(head);
+    if (!months.length) {
+      host.appendChild(el("p", "muted small", "No steps yet. Set up Health sync from the account menu."));
+      return;
+    }
+    var pts = months.map(function (m) {
+      return { m: m, v: Math.round(sums[m].total / sums[m].n), n: sums[m].n };
+    });
+    var W = 320, H = 150, padL = 30, padB = 22, padT = 18;
+    var max = Math.max(2000, Math.ceil(Math.max.apply(null, pts.map(function (p) { return p.v; })) / 2000) * 2000);
+    var bw = (W - padL) / pts.length;
+    var y = function (v) { return H - padB - (v / max) * (H - padB - padT); };
+    var svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, role: "img",
+      "aria-label": "Average steps per day by month: " + pts.map(function (p) { return p.m + " " + p.v; }).join(", ") });
+    [0, max / 2, max].forEach(function (v) {
+      svg.appendChild(svgEl("line", { x1: padL, x2: W, y1: y(v), y2: y(v), class: "axis" }));
+      var tl = svgEl("text", { x: padL - 6, y: y(v) + 4, class: "tick", "text-anchor": "end" });
+      tl.textContent = v ? Math.round(v / 1000) + "k" : "0";
+      svg.appendChild(tl);
+    });
+    var note = el("p", "muted small chart-note", "Tap a month for details.");
+    var best = pts.reduce(function (a, p) { return p.v > a.v ? p : a; }, pts[0]);
+    pts.forEach(function (p, i) {
+      var x = padL + i * bw + bw * 0.16, w = bw * 0.68;
+      var top = y(p.v), h = y(0) - top, r = Math.min(4, h);
+      svg.appendChild(svgEl("path", { class: "bar steps",
+        d: "M" + x + "," + y(0) + "V" + (top + r) + "q0,-" + r + " " + r + ",-" + r +
+           "H" + (x + w - r) + "q" + r + ",0 " + r + "," + r + "V" + y(0) + "Z" }));
+      if (p === best || (i === pts.length - 1 && i - pts.indexOf(best) >= 2)) {
+        var v = svgEl("text", { x: x + w / 2, y: top - 4, class: "val", "text-anchor": "middle" });
+        v.textContent = (Math.round(p.v / 100) / 10) + "k";
+        svg.appendChild(v);
+      }
+      var lab = svgEl("text", { x: x + w / 2, y: H - 6, class: "tick", "text-anchor": "middle" });
+      lab.textContent = MON[Number(p.m.slice(5)) - 1].charAt(0);
+      svg.appendChild(lab);
+      var show = function () {
+        note.textContent = MON[Number(p.m.slice(5)) - 1] + " " + p.m.slice(0, 4) + ": " +
+          p.v.toLocaleString() + " steps a day (" + p.n + (p.n === 1 ? " day)" : " days)");
+      };
+      var hit = svgEl("rect", { x: padL + i * bw, y: padT, width: bw, height: H - padT - padB, class: "hit" });
+      hit.addEventListener("pointerenter", show);
+      hit.addEventListener("click", show);
+      svg.appendChild(hit);
+    });
+    host.append(svg, note);
+  }
+
   /* ---- other workouts: totals per kind ---- */
 
   function renderOthers(acts) {
@@ -338,11 +430,14 @@
       K.db.from("sessions").select("day, kind, done, short, ride_minutes").eq("done", true),
       K.db.from("sets").select("day, exercise, set_no, weight, reps").order("day"),
       K.db.from("daily").select("day, steps, body_weight").order("day"),
-      K.db.from("activities").select("day, name, minutes").order("day")
+      K.db.from("activities").select("day, name, minutes").order("day"),
+      K.db.from("profile").select("weight_goal").maybeSingle()
     ]).then(function (res) {
       res.forEach(function (r) { if (r.error) throw r.error; });
       renderSteps(res[2].data || []);
-      renderBody(res[2].data || []);
+      renderMonthly(res[2].data || []);
+      var goal = res[4].data && res[4].data.weight_goal != null ? Number(res[4].data.weight_goal) : null;
+      renderBody(res[2].data || [], goal);
       renderOthers(res[3].data || []);
       var done = res[0].data || [];
       var sets = (res[1].data || []).map(function (s) {

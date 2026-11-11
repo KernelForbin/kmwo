@@ -160,6 +160,15 @@ main.center .primary { margin-top: 14px; min-width: 240px; }
 .cell.done { background: color-mix(in srgb, var(--lift) 18%, transparent); }
 .cell.done.ride { background: color-mix(in srgb, var(--ride) 18%, transparent); }
 .cell.done .dot { display: none; }
+.cal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 10px; }
+.cal-head .iconbtn { width: 38px; height: 38px; background: var(--surface-2); border: 0; color: var(--fg); }
+.cal-head .iconbtn:disabled { opacity: .3; }
+.cal-title { text-align: center; display: flex; flex-direction: column; gap: 1px; }
+.cal-title strong { font-size: 1.05rem; letter-spacing: -.01em; }
+.grid.month { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; touch-action: pan-y; }
+.grid.month .cell { aspect-ratio: auto; height: 62px; justify-content: flex-start; padding-top: 9px; gap: 4px; }
+.cell .steps { font-size: .6rem; font-weight: 600; color: var(--accent-2); line-height: 1; margin-top: auto; padding-bottom: 6px; font-variant-numeric: tabular-nums; }
+.cell.future .dot { opacity: .7; }
 .cell .tick { width: 14px; height: 14px; stroke-width: 3; color: var(--lift); }
 .cell.ride .tick { color: var(--ride); }
 .cell .short { font-size: .55rem; font-weight: 700; color: var(--muted); line-height: 1; }
@@ -256,6 +265,18 @@ body.noscroll { overflow: hidden; }
 .savebar > div { max-width: 528px; margin: 0 auto; display: flex; gap: 10px; }
 .savebar .primary { flex: 1; }
 
+/* health sync */
+code { font: 500 .82rem/1.4 ui-monospace, "SF Mono", Menlo, Consolas, monospace; background: var(--surface-2); padding: 1px 6px; border-radius: 6px; overflow-wrap: anywhere; }
+.copyrow { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
+.copyrow code { flex: 1; min-width: 0; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--line); }
+.copy { padding: 8px 12px; font-size: .82rem; font-weight: 600; flex: none; }
+.steps-guide ol { margin: 10px 0 4px; padding-left: 20px; }
+.steps-guide > ol > li { margin: 0 0 12px; padding-left: 4px; }
+.steps-guide ul { margin: 6px 0 0; padding-left: 18px; color: inherit; }
+.steps-guide li { font-size: .92rem; }
+#status h3 { margin-bottom: 2px; }
+#makekey { width: 100%; margin-top: 8px; }
+
 /* plan */
 .phases { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 14px 0 10px; }
 .phase { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
@@ -298,6 +319,7 @@ body.noscroll { overflow: hidden; }
 .chart .bar.steps { fill: var(--accent-2); }
 .target.steps { color: var(--accent-2); background: color-mix(in srgb, var(--accent-2) 14%, transparent); }
 .target.other { color: var(--other); background: color-mix(in srgb, var(--other) 14%, transparent); }
+.goalrow { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 4px 0 6px; }
 .hbar { padding: 10px 0; border-top: 1px solid var(--line); }
 .ex-head + .hbar { margin-top: 10px; }
 .hbar-lab { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 6px; }

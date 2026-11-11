@@ -1,0 +1,58 @@
+name: Deploy kmwo
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Read-only by default. Only the deploy job, which runs no repo code, gets
+# the Pages and token permissions.
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+# Actions are pinned to a commit, with the release tag alongside (same pins
+# as the pfml repo), so a moved tag can't change what runs with a Pages token.
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The site is plain HTML, CSS and JS, so there is no build step. This
+      # guard fails the deploy if a secret or data file ever slips in.
+      - name: Refuse to publish secrets
+        run: |
+          found="$(find site \( -name '*.csv' -o -name '.env*' -o -name '*.pem' \) -print)"
+          if [ -n "$found" ] || grep -rIl 'sb_secret_' site; then
+            echo "Secrets or data files found in site/. They must not be public."
+            echo "$found"
+            exit 1
+          fi
+
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: ./site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        timeout-minutes: 10
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

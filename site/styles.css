@@ -248,6 +248,30 @@ table { border-collapse: collapse; width: 100%; margin-top: 8px; }
 th, td { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
 th { color: var(--muted); font-weight: 600; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; }
 
+/* splash (splash.js): a full-screen cover drawn with pseudo-elements on
+   <html>, so it exists from the first paint, before <body> is parsed. */
+html.splash::before, html.splash::after { position: fixed; z-index: 1000; pointer-events: none; transition: opacity .3s ease; }
+html.splash::before {
+  content: ""; inset: 0;
+  background: radial-gradient(120% 70% at 50% 40%, color-mix(in srgb, var(--accent) 22%, var(--bg)) 0%, var(--bg) 70%);
+}
+html.splash::after {
+  content: "kmwo"; left: 50%; top: 50%; width: 200px; margin: -80px 0 0 -100px;
+  padding-top: 108px; text-align: center; color: var(--fg);
+  font: 800 1.9rem/1 var(--font); letter-spacing: -.03em;
+  background: url("icon.svg") top center / 88px 88px no-repeat;
+  animation: splash-pop .6s cubic-bezier(.2, .9, .3, 1.2) both;
+}
+html.splash body { overflow: hidden; }
+html.splash-out::before, html.splash-out::after { opacity: 0; }
+@keyframes splash-pop {
+  0% { opacity: 0; transform: scale(.82); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.splash::after { animation: none; }
+}
+
 /* account menu (menu.js) */
 .account { position: relative; flex: none; }
 .avatar {

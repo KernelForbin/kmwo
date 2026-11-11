@@ -1,14 +1,17 @@
-/* kmwo: sign-in gate.
+/* kmwo: sign-in gate. Every page loads this before its own script.
 
-   Loaded before app.js. Nothing but the sign-in card shows, and no data is
-   fetched, until the visitor is signed in with Google. The data itself is
-   protected by row level security (user_id = auth.uid()), so this gate is
-   not the only lock.
+   Nothing but the sign-in card shows, and no data is fetched, until the
+   visitor is signed in with Google. The data itself is protected by row
+   level security (user_id = auth.uid()), so this gate is not the only lock.
+
+   Each page has <main id="gate"> (with #gate-msg and #signin) and
+   <main id="app" hidden>; this file shows #app once signed in.
 
    Exposes window.KMWO:
-     db       the supabase client
-     ready    Promise, resolves with the session once signed in
-     signOut  () */
+     db         the supabase client
+     ready      Promise, resolves with the session once signed in
+     signOut    ()
+     showError  (text) shows or clears the page's #err line */
 (function () {
   "use strict";
 
@@ -21,7 +24,13 @@
   var KMWO = window.KMWO = {
     db: null,
     ready: new Promise(function (r) { resolveReady = r; }),
-    signOut: null
+    signOut: null,
+    showError: function (text) {
+      var e = document.getElementById("err");
+      if (!e) return;
+      e.textContent = text || "";
+      e.hidden = !text;
+    }
   };
 
   function showSignIn(text) {
@@ -38,9 +47,7 @@
   var db = KMWO.db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabasePublishableKey);
   var opened = false;
 
-  KMWO.signOut = function () {
-    return db.auth.signOut();
-  };
+  KMWO.signOut = function () { return db.auth.signOut(); };
 
   btn.addEventListener("click", function () {
     btn.disabled = true;
@@ -63,6 +70,9 @@
       if (opened) return;
       opened = true;
       gate.hidden = true;
+      document.getElementById("app").hidden = false;
+      var so = document.getElementById("signout");
+      if (so) so.addEventListener("click", KMWO.signOut);
       resolveReady(session);
     } else if (opened) {
       location.reload(); // signed out: back to the sign-in card

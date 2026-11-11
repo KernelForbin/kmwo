@@ -2,9 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#111418">
 <title>kmwo</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="kmwo">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -15,18 +21,29 @@
   </header>
   <p class="muted small" id="who"></p>
 
-  <section class="next">
+  <a class="next" id="next" href="/">
     <span class="label">Next up</span>
     <strong id="next-title"></strong>
     <span class="muted" id="next-desc"></span>
-  </section>
+  </a>
 
   <p class="error" id="err" hidden></p>
 
   <h2>Calendar</h2>
   <div class="grid head" id="dayhead"></div>
   <div id="weeks"></div>
-  <p class="muted small">Tap a session day to check it off. L = Lift, R = Ride.</p>
+  <p class="muted small legend">
+    <span class="key lift">L</span> Lift &nbsp;
+    <span class="key ride">R</span> Ride &nbsp;
+    <span class="key done">&#10003;</span> Done &nbsp;
+    Tap any day to log it.
+  </p>
+
+  <nav class="tabs">
+    <a href="/" class="on">Calendar</a>
+    <a href="/plan">Plan</a>
+    <a href="/progress">Progress</a>
+  </nav>
 </main>
 
 <main id="gate" class="center">

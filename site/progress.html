@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111418">
+<title>Progress · kmwo</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="kmwo">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main id="app" hidden>
+  <header><h1>Progress</h1></header>
+
+  <p class="error" id="err" hidden></p>
+
+  <div class="tiles" id="tiles"></div>
+
+  <h2>Sessions per week</h2>
+  <div class="card chart" id="weekly"></div>
+
+  <h2>Top set weight</h2>
+  <div id="lifts"></div>
+
+  <nav class="tabs">
+    <a href="/">Calendar</a>
+    <a href="/plan">Plan</a>
+    <a href="/progress" class="on">Progress</a>
+  </nav>
+</main>
+
+<main id="gate" class="center">
+  <h1>kmwo</h1>
+  <p class="muted" id="gate-msg">Loading&hellip;</p>
+  <button type="button" class="primary" id="signin" hidden>Sign in with Google</button>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"
+        integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous"></script>
+<script src="config.js"></script>
+<script src="auth.js"></script>
+<script src="plan.js"></script>
+<script src="progress.js"></script>
+</body>
+</html>

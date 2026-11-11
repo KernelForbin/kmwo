@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111418">
+<title>Plan · kmwo</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="kmwo">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main id="app" hidden>
+  <header><h1>The plan</h1></header>
+  <p class="muted">8 weeks, Nov 16 to Jan 10. Three sessions a week: Lift, Ride, Lift.</p>
+
+  <h2>Lift</h2>
+  <div class="card">
+    <p class="muted small">About 20 to 25 minutes. Building gym, or home with light weights.</p>
+    <ol>
+      <li>Goblet squat</li>
+      <li>Dumbbell bench press</li>
+      <li>One-arm dumbbell row (each side)</li>
+    </ol>
+    <dl class="phases">
+      <dt>Weeks 1&ndash;2</dt><dd>2 sets of 10</dd>
+      <dt>Weeks 3&ndash;8</dt><dd>3 sets of 10</dd>
+    </dl>
+    <p class="small">Rest about a minute between sets. When every set of 10 feels easy, go up one weight next time.</p>
+  </div>
+
+  <h2>Ride</h2>
+  <div class="card">
+    <p class="muted small">Peloton bike. Pick any class that fits.</p>
+    <dl class="phases">
+      <dt>Weeks 1&ndash;2</dt><dd>20 min, low impact</dd>
+      <dt>Weeks 3&ndash;8</dt><dd>30 min, low impact or endurance</dd>
+    </dl>
+    <ul class="small">
+      <li>From week 5, one ride a week can be a harder class (HIIT, Tabata, Power Zone) if you feel like it. Optional.</li>
+      <li>Take the post-ride stretch.</li>
+    </ul>
+  </div>
+
+  <h2>Rules</h2>
+  <div class="card rules">
+    <p><strong>Default slot: 8:15 pm.</strong> After bedtime. Same time every session.</p>
+    <p><strong>Missed a day?</strong> Do the next session on your next free day. Don&rsquo;t double up and don&rsquo;t make it up.</p>
+    <p><strong>Short on time?</strong> 10 minutes at home counts: 2 rounds of 10 goblet squats, 10 push-ups, 10 rows per side.</p>
+    <p><strong>Holidays.</strong> Dec 25 and Jan 1 fall on session days. The 10-minute home version counts, or skip and pick up the sequence after.</p>
+    <p><strong>After week 8.</strong> If three a week feels automatic, add a fourth session (a Lift). Don&rsquo;t make sessions longer.</p>
+  </div>
+
+  <nav class="tabs">
+    <a href="/">Calendar</a>
+    <a href="/plan" class="on">Plan</a>
+    <a href="/progress">Progress</a>
+  </nav>
+</main>
+
+<main id="gate" class="center">
+  <h1>kmwo</h1>
+  <p class="muted" id="gate-msg">Loading&hellip;</p>
+  <button type="button" class="primary" id="signin" hidden>Sign in with Google</button>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"
+        integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous"></script>
+<script src="config.js"></script>
+<script src="auth.js"></script>
+</body>
+</html>

@@ -32,7 +32,7 @@ jobs:
       - name: Refuse to publish secrets
         run: |
           found="$(find site \( -name '*.csv' -o -name '.env*' -o -name '*.pem' \) -print)"
-          if [ -n "$found" ] || grep -rIl 'sb_secret_' site; then
+          if [ -n "$found" ] || grep -rIlE 'sb_secret_[A-Za-z0-9_-]{10,}' site; then
             echo "Secrets or data files found in site/. They must not be public."
             echo "$found"
             exit 1

@@ -36,7 +36,7 @@
       var bits = [];
       if (r.steps_days != null) bits.push(r.steps_days + (r.steps_days === 1 ? " day" : " days") + " of steps");
       if (r.weigh_ins) bits.push(r.weigh_ins + (r.weigh_ins === 1 ? " weigh-in" : " weigh-ins"));
-      if (r.workouts != null) bits.push(r.workouts + (r.workouts === 1 ? " workout" : " workouts"));
+      if (r.workouts) bits.push(r.workouts + (r.workouts === 1 ? " workout" : " workouts"));
       if (r.skipped) bits.push(r.skipped + " skipped (logged as Lift or Ride)");
       p.textContent = bits.join(" · ");
     }

@@ -284,6 +284,9 @@ code { font: 500 .82rem/1.4 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 .steps-guide > ol > li { margin: 0 0 12px; padding-left: 4px; }
 .steps-guide ul { margin: 6px 0 0; padding-left: 18px; color: inherit; }
 .steps-guide li { font-size: .92rem; }
+.steps-guide var { color: var(--accent-2); font-style: normal; font-weight: 600; background: color-mix(in srgb, var(--accent-2) 14%, transparent); padding: 0 5px; border-radius: 6px; }
+.steps-guide .nudge { margin: 8px 0 4px !important; }
+.prompt { white-space: pre-wrap; word-break: break-word; font-size: .78rem; line-height: 1.45; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin: 8px 0 0; max-height: 320px; overflow: auto; }
 #status h3 { margin-bottom: 2px; }
 #makekey { width: 100%; margin-top: 8px; }
 

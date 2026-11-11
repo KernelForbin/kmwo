@@ -47,26 +47,72 @@
 
   <h2>2 &middot; Build the Shortcut</h2>
   <div class="card steps-guide">
-    <p class="muted small">In the Shortcuts app, tap <b>+</b> and name it <b>kmwo sync</b>. Add these actions in order. To use a property like <i>Start Date</i>, tap the <i>Repeat Item</i> variable and pick it from the list.</p>
+    <p class="muted small">In the Shortcuts app, tap <b>+</b> and name it <b>kmwo sync</b>. Add these actions in order.</p>
+    <p class="nudge small">Anything <var>highlighted</var> below, like <var>Start Date</var> or <var>Formatted Date</var>, must be a coloured variable tag, not typed text. Tap the field, pick the variable from the bar above the keyboard (or <b>Select Variable</b>), then tap the tag to choose a property such as Start Date, Value or Source. Typed words stay white and are sent as-is.</p>
     <ol>
-      <li><b>Steps.</b> <i>Find Health Samples</i>: Type <b>Steps</b>, filter <b>Start Date is in the last 10 days</b>, Group By <b>None</b>. (Raw samples, so kmwo can remove the iPhone + Watch double count the way Health does.)</li>
+      <li><b>Steps.</b> <i>Find Health Samples</i>: Type <b>Steps</b>, filter <b>Start Date is in the last 10 days</b>, Group By <b>None</b>. Group By Day adds iPhone and Watch steps together; raw samples let kmwo count them the way Health does.</li>
       <li><i>Repeat with Each</i> item in Health Samples. Inside it:
         <ul>
-          <li><i>Format Date</i>: Repeat Item &rsaquo; Start Date, Date Format <b>Custom</b> <code>yyyy-MM-dd HH:mm:ss</code></li>
-          <li>A second <i>Format Date</i>: Repeat Item &rsaquo; End Date, same custom format</li>
-          <li><i>Text</i>: <code>Start|End|Value|Source</code> (the first Formatted Date, <code>|</code>, the second Formatted Date, <code>|</code>, Repeat Item &rsaquo; Value, <code>|</code>, Repeat Item &rsaquo; Source)</li>
+          <li><i>Format Date</i>: <var>Repeat Item &rsaquo; Start Date</var>, Date Format <b>Custom</b> <code>yyyy-MM-dd HH:mm:ss</code>.</li>
+          <li>A second <i>Format Date</i>: <var>Repeat Item &rsaquo; End Date</var>, same custom format.</li>
+          <li><i>Text</i>: four tags with a typed <code>|</code> between them:
+            <var>Formatted Date</var> (start) <code>|</code> <var>Formatted Date</var> (end) <code>|</code> <var>Repeat Item &rsaquo; Value</var> <code>|</code> <var>Repeat Item &rsaquo; Source</var>.
+            To tell the two dates apart, tap one and choose <b>Rename</b> (e.g. Start, End).</li>
         </ul></li>
-      <li>After <i>End Repeat</i>: <i>Combine Text</i> Repeat Results with <b>New Lines</b>, then <i>Set Variable</i> <b>Steps</b>.</li>
-      <li><b>Weight.</b> <i>Find Health Samples</i>: Type <b>Weight</b>, Start Date in the last <b>365 days</b>, no Group By. <i>Repeat with Each</i>: <i>Format Date</i> Start Date as <code>yyyy-MM-dd</code>, then <i>Text</i> <code>Formatted Date|Value</code>. <i>Combine Text</i> with New Lines, Set Variable <b>Weights</b>. (A year, so weigh-ins from your scale app fill in your history.)</li>
-      <li><i>Get Contents of URL</i>:
+      <li>After <i>End Repeat</i>: <i>Combine Text</i> <var>Repeat Results</var> with <b>New Lines</b>, then <i>Set Variable</i> <b>Steps</b>.
+        A line should look like <code>2026-11-10 07:15:00|2026-11-10 07:22:41|612|Apple&nbsp;Watch</code>. To check, add <i>Quick Look</i> here for one run.</li>
+      <li><b>Weight.</b> <i>Find Health Samples</i>: Type <b>Weight</b>, Start Date in the last <b>365 days</b>, Group By <b>None</b>. <i>Repeat with Each</i>: <i>Format Date</i> <var>Start Date</var> as custom <code>yyyy-MM-dd</code>, then <i>Text</i>: <var>Formatted Date</var> <code>|</code> <var>Repeat Item &rsaquo; Value</var>. After End Repeat: <i>Combine Text</i> with New Lines, <i>Set Variable</i> <b>Weights</b>.</li>
+      <li><i>Get Contents of URL</i>, with this URL:
         <div class="copyrow"><code id="url"></code><button type="button" class="copy" data-copy="url">Copy</button></div>
-        Method <b>POST</b>. Headers: <code>apikey</code> =
-        <div class="copyrow"><code id="apikey"></code><button type="button" class="copy" data-copy="apikey">Copy</button></div>
-        and <code>Content-Type</code> = <code>application/json</code>. Request Body <b>JSON</b>, three Text fields:
-        <code>p_key</code> = your sync key, <code>p_steps</code> = Steps, <code>p_weights</code> = Weights.</li>
-      <li>Optional: <i>Show Notification</i> with Contents of URL, to see what synced.</li>
+        Method <b>POST</b>. Two headers:
+        <ul>
+          <li><code>apikey</code> = this public key (starts <code>sb_publishable_</code>):
+            <div class="copyrow"><code id="apikey"></code><button type="button" class="copy" data-copy="apikey">Copy</button></div></li>
+          <li><code>Content-Type</code> = <code>application/json</code></li>
+        </ul>
+        Request Body <b>JSON</b>, three Text fields:
+        <ul>
+          <li><code>p_key</code> = your <b>sync key</b> from step 1 (not the public key)</li>
+          <li><code>p_steps</code> = the <var>Steps</var> variable</li>
+          <li><code>p_weights</code> = the <var>Weights</var> variable</li>
+        </ul></li>
+      <li><i>Show Notification</i> with <var>Contents of URL</var>, so each run shows what synced.</li>
     </ol>
-    <p class="muted small">Run it once by hand. Allow it to read Health and to connect to supabase.co. The top of this page should then show the sync.</p>
+    <p class="muted small">Run it once by hand. Allow it to read Health and to connect to supabase.co. A good result looks like <code>{"ok":true,"step_samples":830,"steps_days":10,"weigh_ins":1,…}</code>, and the top of this page shows the sync.</p>
+    <details>
+      <summary>Or let Shortcuts build it from a description</summary>
+      <p class="muted small">If your Shortcuts app offers to build a shortcut from a description, paste this, then replace the three PASTE_ placeholders using the copy buttons above. Check the result against the steps above: it often sets Group By to Day or types variable names as plain text.</p>
+      <pre class="prompt" id="aiprompt">Create a shortcut named "kmwo sync" that does the following:
+
+1. Find Health Samples where Type is Steps and Start Date is in the last 10 days. Do not group the results (Group By: None). Sort by Start Date, oldest first.
+
+2. Repeat with each item in those step samples:
+   a. Format Date: the Repeat Item's Start Date, custom format yyyy-MM-dd HH:mm:ss. Name this "Start".
+   b. Format Date: the Repeat Item's End Date, custom format yyyy-MM-dd HH:mm:ss. Name this "End".
+   c. Text: the Start variable, a | character, the End variable, a | character, the Repeat Item's Value, a | character, the Repeat Item's Source. Use real variables, not typed words.
+
+3. After the repeat, Combine Text from the Repeat Results using New Lines, and Set Variable "Steps".
+
+4. Find Health Samples where Type is Weight and Start Date is in the last 365 days. Do not group the results.
+
+5. Repeat with each item in those weight samples:
+   a. Format Date: the Repeat Item's Start Date, custom format yyyy-MM-dd.
+   b. Text: the Formatted Date variable, a | character, the Repeat Item's Value.
+
+6. After the repeat, Combine Text from the Repeat Results using New Lines, and Set Variable "Weights".
+
+7. Get Contents of URL:
+   - URL: PASTE_URL_HERE
+   - Method: POST
+   - Headers: "apikey" set to PASTE_PUBLIC_KEY_HERE, and "Content-Type" set to "application/json"
+   - Request Body: JSON with three text fields:
+       "p_key" set to PASTE_SYNC_KEY_HERE
+       "p_steps" set to the Steps variable
+       "p_weights" set to the Weights variable
+
+8. Show Notification with the Contents of URL as the body.</pre>
+      <div class="copyrow" style="justify-content:flex-end"><button type="button" class="copy" data-copy="aiprompt">Copy description</button></div>
+    </details>
   </div>
 
   <h2>3 &middot; Run it every morning</h2>
@@ -78,12 +124,23 @@
     <p class="muted small">iPhone only lets Shortcuts read Health while the phone is unlocked, so a morning trigger works better than a set time overnight. Each run re-sends the last 10 days, so a missed morning catches up later.</p>
   </div>
 
+  <h2>If something&rsquo;s off</h2>
+  <div class="card">
+    <ul class="small">
+      <li><b>&ldquo;Invalid API key&rdquo;</b>: the <code>apikey</code> header and <code>p_key</code> are swapped. The header gets the <code>sb_publishable_</code> key; <code>p_key</code> gets your sync key.</li>
+      <li><b>&ldquo;unknown sync key&rdquo;</b>: the key in <code>p_key</code> was replaced or mistyped. Make a new one above and paste it in.</li>
+      <li><b><code>step_samples</code> is 0</b>: the step Text line has typed words instead of variable tags. Rebuild it as described in step 2.</li>
+      <li><b>Steps about double Health&rsquo;s</b>: Find Health Samples for Steps has Group By set to Day. Set it to None.</li>
+    </ul>
+  </div>
+
   <h2>Good to know</h2>
   <div class="card">
     <ul class="small">
       <li>Synced steps and weigh-ins replace that day&rsquo;s values.</li>
       <li>Steps from your iPhone and Apple Watch are combined the way Health does it, so they aren&rsquo;t counted twice.</li>
-      <li>The oldest day in each sync is left alone, since a &ldquo;last 10 days&rdquo; window starts partway through it.</li>
+      <li>The oldest day in each sync is left alone, since a &ldquo;last 10 days&rdquo; window starts partway through it. So <code>steps_days</code> is usually 10.</li>
+      <li>Shortcuts can&rsquo;t read workouts. Add walks, runs and other workouts from the day page.</li>
     </ul>
   </div>
 </main>

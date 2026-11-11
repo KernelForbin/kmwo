@@ -3,22 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#111418">
+<meta name="theme-color" content="#0b0d10">
 <title>Log · kmwo</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-title" content="kmwo">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <main id="app" hidden>
-  <header>
-    <a href="/" class="back" aria-label="Back to calendar">&larr; Calendar</a>
-    <span class="muted small" id="weeklabel"></span>
-  </header>
+  <a href="/" class="back">
+    <svg class="i" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>Calendar
+  </a>
+  <p class="eyebrow" id="weeklabel"></p>
   <h1 id="title"></h1>
   <p class="muted" id="planned"></p>
 
@@ -27,18 +31,24 @@
     <button type="button" data-kind="ride" role="radio">Ride</button>
   </div>
 
-  <label class="check">
-    <input type="checkbox" id="short">
-    <span>Short on time: 10-minute home version</span>
-  </label>
-  <p class="muted small" id="short-desc" hidden>2 rounds: 10 goblet squats, 10 push-ups, 10 rows per side. It counts.</p>
+  <div class="toggle-card">
+    <label class="check" style="margin:0">
+      <input type="checkbox" id="short">
+      <span><strong>Short on time</strong> <span class="muted">· 10-minute home version</span></span>
+    </label>
+    <p class="muted small" id="short-desc" hidden style="margin:8px 0 0 30px">2 rounds: 10 goblet squats, 10 push-ups, 10 rows per side. It counts.</p>
+  </div>
 
   <section id="lift"></section>
 
   <section id="ride" hidden>
     <div class="card">
-      <label class="field"><span>Minutes</span>
-        <input type="number" id="ride-min" inputmode="numeric" min="1" max="300"></label>
+      <label class="field" style="margin-top:0"><span>Minutes</span>
+        <div class="stepper">
+          <button type="button" id="ride-dec" aria-label="Five minutes less">&minus;</button>
+          <input type="number" id="ride-min" inputmode="numeric" min="1" max="300">
+          <button type="button" id="ride-inc" aria-label="Five minutes more">+</button>
+        </div></label>
       <label class="field"><span>Class type</span>
         <select id="ride-type"></select></label>
       <p class="muted small" id="ride-hint"></p>
@@ -47,17 +57,18 @@
   </section>
 
   <label class="field"><span>Note</span>
-    <textarea id="note" rows="2" placeholder="Optional"></textarea></label>
+    <textarea id="note" rows="2" placeholder="How did it feel?"></textarea></label>
 
   <p class="error" id="err" hidden></p>
+  <button type="button" class="danger" id="clear" hidden>Remove this log</button>
 
-  <div class="actions">
+  <div class="savebar"><div>
     <button type="button" class="primary" id="save">Save and mark done</button>
-    <button type="button" class="danger" id="clear" hidden>Remove this log</button>
-  </div>
+  </div></div>
 </main>
 
 <main id="gate" class="center">
+  <img class="brand" src="icon.svg" alt="">
   <h1>kmwo</h1>
   <p class="muted" id="gate-msg">Loading&hellip;</p>
   <button type="button" class="primary" id="signin" hidden>Sign in with Google</button>

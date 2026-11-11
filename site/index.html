@@ -3,50 +3,69 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#111418">
+<meta name="theme-color" content="#0b0d10">
 <title>kmwo</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-title" content="kmwo">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <main id="app" hidden>
-  <header>
-    <h1>Nov 16 to Jan 10</h1>
-    <button type="button" id="signout">Sign out</button>
-  </header>
-  <p class="muted small" id="who"></p>
+  <div class="top">
+    <div>
+      <p class="eyebrow" id="weeklabel"></p>
+      <h1>Your plan</h1>
+    </div>
+    <button type="button" class="iconbtn" id="signout" aria-label="Sign out" title="Sign out">
+      <svg class="i" viewBox="0 0 24 24"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H3"/></svg>
+    </button>
+  </div>
 
-  <a class="next" id="next" href="/">
-    <span class="label">Next up</span>
-    <strong id="next-title"></strong>
-    <span class="muted" id="next-desc"></span>
+  <a class="hero" id="next" href="/">
+    <div class="hero-top">
+      <span class="eyebrow">Next up</span>
+      <span class="pill" id="next-when"></span>
+    </div>
+    <div class="hero-kind" id="next-kind"></div>
+    <p id="next-desc"></p>
+    <div class="meter"><i id="next-meter" style="width:0"></i></div>
+    <div class="hero-foot">
+      <span id="next-count"></span>
+      <span class="cta" id="next-cta">Log it &rarr;</span>
+    </div>
   </a>
 
   <p class="error" id="err" hidden></p>
 
   <h2>Calendar</h2>
-  <div class="grid head" id="dayhead"></div>
-  <div id="weeks"></div>
+  <div class="cal">
+    <div class="grid head" id="dayhead"></div>
+    <div id="weeks"></div>
+  </div>
   <p class="muted small legend">
-    <span class="key lift">L</span> Lift &nbsp;
-    <span class="key ride">R</span> Ride &nbsp;
-    <span class="key done">&#10003;</span> Done &nbsp;
-    Tap any day to log it.
+    <span><i class="dot lift"></i>Lift</span>
+    <span><i class="dot ride"></i>Ride</span>
+    <span><i class="dot missed"></i>Missed</span>
+    <span>Tap any day to log it</span>
   </p>
 
   <nav class="tabs">
-    <a href="/" class="on">Calendar</a>
-    <a href="/plan">Plan</a>
-    <a href="/progress">Progress</a>
+    <a href="/" class="on"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Calendar</a>
+    <a href="/plan"><svg class="i" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>Plan</a>
+    <a href="/progress"><svg class="i" viewBox="0 0 24 24"><path d="M5 20V12M12 20V5M19 20v-9"/></svg>Progress</a>
   </nav>
 </main>
 
 <main id="gate" class="center">
+  <img class="brand" src="icon.svg" alt="">
   <h1>kmwo</h1>
   <p class="muted" id="gate-msg">Loading&hellip;</p>
   <button type="button" class="primary" id="signin" hidden>Sign in with Google</button>

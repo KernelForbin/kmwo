@@ -17,8 +17,8 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 SITE = Path(__file__).resolve().parent.parent / "site"
-BG = "#111418"
-FG = "#2f6fed"
+BG = "#0b0d10"
+FG = "#5b8cff"
 
 # Dumbbell on a 100-unit canvas: (x0, y0, x1, y1, radius)
 SHAPES = [

@@ -48,13 +48,40 @@
 
     var rideMin = done.reduce(function (m, s) { return m + (s.kind === "ride" ? (s.ride_minutes || 0) : 0); }, 0);
 
+    // Ring: sessions done of 24.
+    var pct = Math.min(1, inPlan.length / P.TOTAL);
+    var C = 2 * Math.PI * 44;
+    var ring = el("div", "ring");
+    var svg = svgEl("svg", { viewBox: "0 0 104 104", "aria-hidden": "true" });
+    svg.appendChild(svgEl("circle", { cx: 52, cy: 52, r: 44, class: "track" }));
+    svg.appendChild(svgEl("circle", { cx: 52, cy: 52, r: 44, class: "fill",
+      "stroke-dasharray": C, "stroke-dashoffset": C * (1 - pct) }));
+    var lbl = el("div", "lbl");
+    var inner = el("div");
+    inner.append(el("strong", null, String(inPlan.length)), el("br"), el("span", null, "of " + P.TOTAL));
+    lbl.appendChild(inner);
+    ring.append(svg, lbl);
+    var lifts = inPlan.filter(function (s) { return s.kind === "lift"; }).length;
+    var text = el("div");
+    text.append(
+      el("p", "eyebrow", "Sessions done"),
+      el("h3", null, Math.round(pct * 100) + "% of the plan"),
+      el("p", "muted small", lifts + (lifts === 1 ? " lift" : " lifts") + " · " +
+        (inPlan.length - lifts) + (inPlan.length - lifts === 1 ? " ride" : " rides"))
+    );
+    var rc = $("ringcard");
+    rc.textContent = "";
+    rc.append(ring, text);
+    rc.setAttribute("aria-label", inPlan.length + " of " + P.TOTAL + " sessions done");
+
+    if (curWeek >= 1 && curWeek <= P.WEEKS) $("weeklabel").textContent = "Week " + curWeek + " of " + P.WEEKS;
+
     var host = $("tiles");
     host.textContent = "";
     host.append(
-      tile(inPlan.length + " / " + P.TOTAL, "sessions done"),
-      tile(curWeek >= 1 && curWeek <= P.WEEKS ? counts[curWeek - 1] + " / 3" : "–", "this week"),
-      tile(String(streak), streak === 1 ? "full week in a row" : "full weeks in a row"),
-      tile(String(rideMin), "ride minutes")
+      tile(curWeek >= 1 && curWeek <= P.WEEKS ? counts[curWeek - 1] + "/3" : "–", "this week"),
+      tile(String(streak), streak === 1 ? "week streak" : "week streak"),
+      tile(String(rideMin), "ride min")
     );
   }
 
@@ -70,7 +97,7 @@
 
     [0, 3].forEach(function (v) {
       svg.appendChild(svgEl("line", { x1: padL, x2: W, y1: y(v), y2: y(v),
-        class: v === 3 ? "target" : "axis" }));
+        class: v === 3 ? "goal" : "axis" }));
     });
     var tl = svgEl("text", { x: padL - 6, y: y(3) + 4, class: "tick", "text-anchor": "end" });
     tl.textContent = "3";
@@ -81,7 +108,7 @@
       var x = padL + i * bw + bw * 0.2, w = bw * 0.6;
       if (c > 0) {
         var top = y(Math.min(c, max)), h = y(0) - top, r = Math.min(4, h);
-        svg.appendChild(svgEl("path", { class: "bar",
+        svg.appendChild(svgEl("path", { class: c >= 3 ? "bar full" : "bar",
           d: "M" + x + "," + y(0) + "V" + (top + r) + "q0,-" + r + " " + r + ",-" + r +
              "H" + (x + w - r) + "q" + r + ",0 " + r + "," + r + "V" + y(0) + "Z" }));
         var v = svgEl("text", { x: x + w / 2, y: top - 4, class: "val", "text-anchor": "middle" });
@@ -117,12 +144,18 @@
     }).filter(function (p) { return p.top >= 0; });
 
     var card = el("div", "card chart");
-    card.appendChild(el("h3", null, ex.name));
+    var head = el("div", "ex-head");
+    head.appendChild(el("h3", null, ex.name));
+    card.appendChild(head);
     if (!pts.length) {
       card.appendChild(el("p", "muted small", "No sets logged yet."));
       return card;
     }
 
+    if (pts.length > 1) {
+      var delta = pts[pts.length - 1].top - pts[0].top;
+      head.appendChild(el("span", "target", (delta >= 0 ? "+" : "") + delta + " lb"));
+    }
     var W = 320, H = 130, padL = 34, padR = 40, padT = 12, padB = 20;
     var lo = Math.min.apply(null, pts.map(function (p) { return p.top; }));
     var hi = Math.max.apply(null, pts.map(function (p) { return p.top; }));
@@ -145,6 +178,9 @@
       svg.appendChild(t);
     });
     if (pts.length > 1) {
+      svg.appendChild(svgEl("path", { class: "area",
+        d: "M" + x(0) + "," + y(lo) + pts.map(function (p, i) { return "L" + x(i) + "," + y(p.top); }).join("") +
+           "L" + x(pts.length - 1) + "," + y(lo) + "Z" }));
       svg.appendChild(svgEl("polyline", { class: "line",
         points: pts.map(function (p, i) { return x(i) + "," + y(p.top); }).join(" ") }));
     }

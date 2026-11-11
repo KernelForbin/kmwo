@@ -39,6 +39,32 @@
     };
   }
 
+  // A − [input] + control. step: amount per tap; onChange gets the new number.
+  function stepper(value, step, min, max, label, onChange, decimal) {
+    var wrap = document.createElement("div");
+    wrap.className = "stepper";
+    var dec = document.createElement("button");
+    dec.type = "button"; dec.textContent = "−"; dec.setAttribute("aria-label", label + ", less");
+    var inc = document.createElement("button");
+    inc.type = "button"; inc.textContent = "+"; inc.setAttribute("aria-label", label + ", more");
+    var inp = document.createElement("input");
+    inp.type = "number"; inp.inputMode = decimal ? "decimal" : "numeric";
+    inp.min = String(min); inp.max = String(max); inp.step = decimal ? "0.5" : "1";
+    inp.placeholder = "–"; inp.setAttribute("aria-label", label);
+    inp.value = value == null ? "" : value;
+    inp.addEventListener("input", function () { onChange(num(inp.value)); });
+    function bump(d) {
+      var cur = num(inp.value);
+      var next = Math.min(max, Math.max(min, (cur == null ? 0 : cur) + d));
+      inp.value = next;
+      onChange(next);
+    }
+    dec.addEventListener("click", function () { bump(-step); });
+    inc.addEventListener("click", function () { bump(step); });
+    wrap.append(dec, inp, inc);
+    return wrap;
+  }
+
   function renderLift() {
     var host = $("lift");
     host.textContent = "";
@@ -46,9 +72,15 @@
       var card = document.createElement("div");
       card.className = "card";
 
+      var head = document.createElement("div");
+      head.className = "ex-head";
       var h = document.createElement("h3");
       h.textContent = ex.name + (ex.note ? " (" + ex.note + ")" : "");
-      card.appendChild(h);
+      var tgt = document.createElement("span");
+      tgt.className = "target";
+      tgt.textContent = P.setsFor(week) + " × 10";
+      head.append(h, tgt);
+      card.appendChild(head);
 
       var info = lastLine(ex.id);
       var last = document.createElement("p");
@@ -63,28 +95,25 @@
       }
 
       var rows = setsByEx[ex.id];
-      rows.forEach(function (s, i) {
-        var row = document.createElement("div");
-        row.className = "setrow";
-        var lab = document.createElement("span");
-        lab.className = "muted small";
-        lab.textContent = "Set " + (i + 1);
-        var w = document.createElement("input");
-        w.type = "number"; w.inputMode = "decimal"; w.min = "0"; w.step = "0.5";
-        w.placeholder = "lb"; w.setAttribute("aria-label", ex.name + " set " + (i + 1) + " weight");
-        w.value = s.weight == null ? "" : s.weight;
-        w.addEventListener("input", function () { s.weight = num(w.value); });
-        var x = document.createElement("span");
-        x.className = "muted";
-        x.textContent = "lb ×";
-        var r = document.createElement("input");
-        r.type = "number"; r.inputMode = "numeric"; r.min = "0"; r.max = "100";
-        r.setAttribute("aria-label", ex.name + " set " + (i + 1) + " reps");
-        r.value = s.reps == null ? "" : s.reps;
-        r.addEventListener("input", function () { s.reps = num(r.value); });
-        row.append(lab, w, x, r);
-        card.appendChild(row);
+      var grid = document.createElement("div");
+      grid.className = "setgrid";
+      ["", "Weight (lb)", "Reps"].forEach(function (t) {
+        var c = document.createElement("span");
+        c.className = "colhead";
+        c.textContent = t;
+        grid.appendChild(c);
       });
+      rows.forEach(function (s, i) {
+        var n = document.createElement("span");
+        n.className = "n";
+        n.textContent = i + 1;
+        grid.append(
+          n,
+          stepper(s.weight, 5, 0, 500, ex.name + " set " + (i + 1) + " weight", function (v) { s.weight = v; }, true),
+          stepper(s.reps, 1, 0, 100, ex.name + " set " + (i + 1) + " reps", function (v) { s.reps = v; }, false)
+        );
+      });
+      card.appendChild(grid);
 
       var tools = document.createElement("div");
       tools.className = "settools";
@@ -262,13 +291,23 @@
   }
 
   K.ready.then(function () {
-    $("title").textContent = P.nice(day) === "Today" ? "Today, " + P.md(day) : P.nice(day);
-    $("weeklabel").textContent = P.inPlan(day) ? "Week " + week + " of " + P.WEEKS : "";
+    var dt = P.parseDay(day);
+    var full = dt.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+    var nice = P.nice(day);
+    $("title").textContent = nice === "Today" || nice === "Tomorrow" ? nice : full;
+    $("weeklabel").textContent = (nice === "Today" || nice === "Tomorrow" ? full : "") +
+      (P.inPlan(day) ? ((nice === "Today" || nice === "Tomorrow") ? " · " : "") + "Week " + week + " of " + P.WEEKS : "");
     fillRideTypes();
     document.querySelectorAll(".seg button").forEach(function (b) {
       b.addEventListener("click", function () { setKind(b.dataset.kind); });
     });
     $("short").addEventListener("change", function () { setKind(kind); });
+    [["ride-dec", -5], ["ride-inc", 5]].forEach(function (p) {
+      $(p[0]).addEventListener("click", function () {
+        var v = num($("ride-min").value) || 0;
+        $("ride-min").value = Math.min(300, Math.max(5, v + p[1]));
+      });
+    });
     $("save").addEventListener("click", save);
     $("clear").addEventListener("click", clearLog);
     load().catch(function (e) { K.showError(e.message || String(e)); });

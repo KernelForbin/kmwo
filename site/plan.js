@@ -1,16 +1,17 @@
-/* The 8-week plan, Nov 16 2026 to Jan 10 2027 (Mon to Sun), and the date
+/* The 8-week plan, Wed Nov 11 2026 to Tue Jan 5 2027, and the date
    helpers every page shares. Pure data and functions, no network. */
 window.KMWO_PLAN = (function () {
   "use strict";
 
-  var START = "2026-11-16"; // a Monday
+  var START = "2026-11-11"; // a Wednesday, the first Ride
   var WEEKS = 8;
-  // Weekday index, Monday = 0. ASSUMPTION: Mon/Wed/Fri. Edit to match your week.
-  var SCHEDULE = { 0: "lift", 2: "ride", 4: "lift" };
-  // The order sessions come in. A missed day doesn't skip one: the next
-  // session done is the next in this sequence ("pick up the sequence after").
-  var PATTERN = ["lift", "ride", "lift"];
-  var TOTAL = WEEKS * PATTERN.length;
+  // Session days, weekday index with Monday = 0: Mon, Wed, Fri.
+  var SESSION_DAYS = [0, 2, 4];
+  // Sessions alternate Ride, Lift, Ride, Lift... across the session days
+  // (Wed Ride, Fri Lift, Mon Ride, Wed Lift, Fri Ride...). A missed day
+  // doesn't skip one: the next session done is the next in this sequence.
+  var PATTERN = ["ride", "lift"];
+  var TOTAL = WEEKS * SESSION_DAYS.length;
   var DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   var EXERCISES = [
@@ -42,7 +43,16 @@ window.KMWO_PLAN = (function () {
   var END = fmtDay(addDays(parseDay(START), WEEKS * 7 - 1));
   function inPlan(day) { return day >= START && day <= END; }
   function weekday(day) { return (parseDay(day).getDay() + 6) % 7; }
-  function plannedKind(day) { return inPlan(day) ? SCHEDULE[weekday(day)] : undefined; }
+  // Planned kind for each session day in the plan, in order.
+  var SCHEDULE = {};
+  (function () {
+    var n = 0;
+    for (var i = 0; i < WEEKS * 7; i++) {
+      var day = fmtDay(addDays(parseDay(START), i));
+      if (SESSION_DAYS.indexOf(weekday(day)) !== -1) SCHEDULE[day] = PATTERN[n++ % PATTERN.length];
+    }
+  })();
+  function plannedKind(day) { return SCHEDULE[day]; }
 
   // Plan week 1-8 for a day; days before the plan count as week 1, after as 8.
   function weekOf(day) {
@@ -73,7 +83,7 @@ window.KMWO_PLAN = (function () {
   /* What to do next, given the days with a done session.
      Kind: the next in the sequence. When: today if today is a planned day,
      or if you're behind (fewer done than planned so far); otherwise the next
-     planned day. Returns null once all 24 are done. */
+     planned day. Returns null once all sessions are done. */
   function nextUp(doneDays) {
     var t = today();
     var done = doneDays.filter(inPlan);

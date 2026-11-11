@@ -36,7 +36,7 @@
 
   function renderHeader() {
     var w = currentWeek();
-    $("weeklabel").textContent = w === 0 ? "Starts Mon, Nov 16"
+    $("weeklabel").textContent = w === 0 ? "Starts " + P.nice(P.START)
       : w > P.WEEKS ? "Plan complete" : "Week " + w + " of " + P.WEEKS;
   }
 

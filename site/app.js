@@ -9,6 +9,8 @@
   var SVGNS = "http://www.w3.org/2000/svg";
 
   var logged = {}; // day -> { kind, done, short }
+  var extras = {}; // day -> [other workout names]
+  var daily = {};  // day -> { steps, body_weight } (today only)
 
   function tick() {
     var s = document.createElementNS(SVGNS, "svg");
@@ -55,7 +57,30 @@
     $("next-desc").textContent = P.describe(n.kind, n.week);
     $("next-count").textContent = "Session " + n.number + " of " + P.TOTAL;
     $("next-cta").textContent = "Log it →";
-    box.href = "/day?d=" + n.day;
+    box.href = "/day?d=" + n.day + "&k=" + n.kind;
+  }
+
+  // Today strip: steps, weight and other workouts for today, each a quick add.
+  function renderToday() {
+    var t = P.today();
+    var d = daily[t] || {};
+    var acts = extras[t] || [];
+    var chips = [
+      { add: "steps", set: d.steps != null, text: d.steps != null ? Number(d.steps).toLocaleString() + " steps" : "Steps" },
+      { add: "weight", set: d.body_weight != null, text: d.body_weight != null ? Number(d.body_weight) + " lb" : "Weight" },
+      { add: "workout", set: acts.length > 0, text: acts.length ? acts.join(", ") : "Workout" }
+    ];
+    var host = $("today");
+    host.textContent = "";
+    chips.forEach(function (c) {
+      var a = document.createElement("a");
+      a.className = "chip " + c.add + (c.set ? " set" : " add");
+      // A filled chip opens the day to edit; an empty one opens that field.
+      a.href = "/day?d=" + t + (c.set ? "" : "&add=" + c.add);
+      if (!c.set) a.innerHTML = '<svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>';
+      a.appendChild(document.createTextNode(c.text));
+      host.appendChild(a);
+    });
   }
 
   function renderCalendar() {
@@ -106,6 +131,13 @@
           dot.className = "dot";
           el.appendChild(dot);
         }
+        if (extras[day]) {
+          var o = document.createElement("i");
+          o.className = "other";
+          o.title = extras[day].join(", ");
+          el.appendChild(o);
+          el.setAttribute("aria-label", el.getAttribute("aria-label") + ", also " + extras[day].join(", "));
+        }
         row.appendChild(el);
       }
       host.appendChild(row);
@@ -114,11 +146,19 @@
   }
 
   function load() {
-    return K.db.from("sessions").select("day, kind, done, short").then(function (res) {
-      if (res.error) { K.showError(res.error.message); return; }
-      logged = {};
-      (res.data || []).forEach(function (r) { logged[r.day] = r; });
+    return Promise.all([
+      K.db.from("sessions").select("day, kind, done, short"),
+      K.db.from("activities").select("day, name"),
+      K.db.from("daily").select("day, steps, body_weight").gte("day", P.today())
+    ]).then(function (res) {
+      var bad = res.find(function (r) { return r.error; });
+      if (bad) { K.showError(bad.error.message); return; }
+      logged = {}; extras = {}; daily = {};
+      res[0].data.forEach(function (r) { logged[r.day] = r; });
+      res[1].data.forEach(function (r) { (extras[r.day] = extras[r.day] || []).push(r.name); });
+      res[2].data.forEach(function (r) { daily[r.day] = r; });
       renderCalendar();
+      renderToday();
     });
   }
 
@@ -130,6 +170,7 @@
     });
     renderHeader();
     renderCalendar();
+    renderToday();
     load();
   });
 })();

@@ -31,11 +31,13 @@
   <h1 id="title"></h1>
   <p class="muted" id="planned"></p>
 
-  <div class="seg" role="radiogroup" aria-label="Session type">
+  <div class="seg three" role="radiogroup" aria-label="Plan session">
     <button type="button" data-kind="lift" role="radio">Lift</button>
     <button type="button" data-kind="ride" role="radio">Ride</button>
+    <button type="button" data-kind="none" role="radio">None</button>
   </div>
 
+  <div id="plansection">
   <div class="toggle-card">
     <label class="check" style="margin:0">
       <input type="checkbox" id="short">
@@ -63,13 +65,39 @@
 
   <label class="field"><span>Note</span>
     <textarea id="note" rows="2" placeholder="How did it feel?"></textarea></label>
+  </div>
+
+  <h2>Also this day</h2>
+  <div id="extras"></div>
+  <div class="addrow" id="addrow">
+    <button type="button" class="chip add" data-add="workout">
+      <svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Workout</button>
+    <button type="button" class="chip add" data-add="steps">
+      <svg class="i" viewBox="0 0 24 24"><path d="M8 16c-2 0-3-2-3-5s1-6 3-6 3 3 3 5-1 6-3 6zM16 20c-2 0-3-3-3-5s1-5 3-5 3 2 3 5-1 5-3 5z"/></svg>Steps</button>
+    <button type="button" class="chip add" data-add="weight">
+      <svg class="i" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 10a3 3 0 0 1 6 0M12 10l1.5-2"/></svg>Body weight</button>
+  </div>
 
   <p class="error" id="err" hidden></p>
-  <button type="button" class="danger" id="clear" hidden>Remove this log</button>
+  <button type="button" class="danger" id="clear" hidden>Remove everything for this day</button>
 
   <div class="savebar"><div>
     <button type="button" class="primary" id="save">Save and mark done</button>
   </div></div>
+
+  <!-- Bottom sheet: pick a workout, or type a new one (saved for next time) -->
+  <div class="sheet-back" id="sheet" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+      <div class="sheet-grip"></div>
+      <h3 id="sheet-title">Add a workout</h3>
+      <form class="sheet-new" id="sheet-form">
+        <input id="sheet-input" type="text" maxlength="40" placeholder="Search or add new&hellip;" autocomplete="off" enterkeyhint="done">
+        <button type="submit" class="primary" id="sheet-addnew" hidden>Add</button>
+      </form>
+      <div class="chips" id="sheet-chips"></div>
+      <p class="muted small" id="sheet-hint">New names are saved to this list for next time.</p>
+    </div>
+  </div>
 </main>
 
 <main id="gate" class="center">

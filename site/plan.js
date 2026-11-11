@@ -19,6 +19,9 @@ window.KMWO_PLAN = (function () {
     { id: "row", name: "One-arm dumbbell row", note: "each side" }
   ];
   var RIDE_TYPES = ["Low impact", "Endurance", "HIIT", "Tabata", "Power Zone", "Other"];
+  // Starter list for "other" workouts. Names you type yourself are saved
+  // (workout_types table) and offered next to these.
+  var OTHER_WORKOUTS = ["Walk", "Run", "Hike", "Yoga", "Stretching", "Swim", "Sports"];
 
   function parseDay(s) {
     var p = s.split("-").map(Number);
@@ -104,7 +107,7 @@ window.KMWO_PLAN = (function () {
 
   return {
     START: START, END: END, WEEKS: WEEKS, SCHEDULE: SCHEDULE, PATTERN: PATTERN, TOTAL: TOTAL,
-    DAY_NAMES: DAY_NAMES, EXERCISES: EXERCISES, RIDE_TYPES: RIDE_TYPES,
+    DAY_NAMES: DAY_NAMES, EXERCISES: EXERCISES, RIDE_TYPES: RIDE_TYPES, OTHER_WORKOUTS: OTHER_WORKOUTS,
     parseDay: parseDay, fmtDay: fmtDay, addDays: addDays, today: today, isDay: isDay,
     inPlan: inPlan, weekday: weekday, plannedKind: plannedKind, weekOf: weekOf,
     setsFor: setsFor, rideMinutes: rideMinutes, describe: describe,

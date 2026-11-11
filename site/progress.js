@@ -130,45 +130,36 @@
     host.appendChild(note);
   }
 
-  /* ---- top set weight per lift ---- */
+  /* ---- line chart over dated points (lift top sets, body weight) ----
+     pts: [{ day, top, detail }] in date order. Returns the filled card. */
 
-  function renderLift(ex, sets) {
-    var byDay = {};
-    sets.filter(function (s) { return s.exercise === ex.id; }).forEach(function (s) {
-      (byDay[s.day] = byDay[s.day] || []).push(s);
-    });
-    var pts = Object.keys(byDay).sort().map(function (d) {
-      var list = byDay[d].sort(function (a, b) { return a.set_no - b.set_no; });
-      var top = list.reduce(function (m, s) { return s.weight != null && s.weight > m ? s.weight : m; }, -1);
-      return { day: d, top: top, reps: list.map(function (s) { return s.reps == null ? "?" : s.reps; }) };
-    }).filter(function (p) { return p.top >= 0; });
-
+  function lineCard(title, pts, opts) {
     var card = el("div", "card chart");
     var head = el("div", "ex-head");
-    head.appendChild(el("h3", null, ex.name));
+    head.appendChild(el("h3", null, title));
     card.appendChild(head);
     if (!pts.length) {
-      card.appendChild(el("p", "muted small", "No sets logged yet."));
+      card.appendChild(el("p", "muted small", opts.empty));
       return card;
     }
 
     if (pts.length > 1) {
-      var delta = pts[pts.length - 1].top - pts[0].top;
-      head.appendChild(el("span", "target", (delta >= 0 ? "+" : "") + delta + " lb"));
+      var delta = Math.round((pts[pts.length - 1].top - pts[0].top) * 10) / 10;
+      head.appendChild(el("span", "target", (delta >= 0 ? "+" : "−") + Math.abs(delta) + " lb"));
     }
-    var W = 320, H = 130, padL = 34, padR = 40, padT = 12, padB = 20;
+    var W = 320, H = 130, padL = 34, padR = 48, padT = 12, padB = 20;
     var lo = Math.min.apply(null, pts.map(function (p) { return p.top; }));
     var hi = Math.max.apply(null, pts.map(function (p) { return p.top; }));
-    if (hi === lo) { lo = Math.max(0, lo - 5); hi = hi + 5; }
+    if (hi === lo) { lo = Math.max(0, lo - opts.pad); hi = hi + opts.pad; }
     var x = function (i) { return pts.length === 1 ? (padL + W - padR) / 2 : padL + i * (W - padL - padR) / (pts.length - 1); };
     var y = function (v) { return H - padB - (v - lo) / (hi - lo) * (H - padT - padB); };
 
     var svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, role: "img",
-      "aria-label": ex.name + " top set weight: " + pts.map(function (p) { return P.md(p.day) + " " + p.top + " lb"; }).join(", ") });
+      "aria-label": title + ": " + pts.map(function (p) { return P.md(p.day) + " " + p.top + " lb"; }).join(", ") });
     [lo, hi].forEach(function (v) {
       svg.appendChild(svgEl("line", { x1: padL, x2: W - padR, y1: y(v), y2: y(v), class: "axis" }));
       var t = svgEl("text", { x: padL - 6, y: y(v) + 4, class: "tick", "text-anchor": "end" });
-      t.textContent = Math.round(v);
+      t.textContent = opts.decimals ? v.toFixed(1) : Math.round(v);
       svg.appendChild(t);
     });
     [0, pts.length - 1].forEach(function (i, k) {
@@ -187,7 +178,7 @@
     var note = el("p", "muted small chart-note", "Tap a point for details.");
     pts.forEach(function (p, i) {
       svg.appendChild(svgEl("circle", { cx: x(i), cy: y(p.top), r: 4, class: "dot" }));
-      var show = function () { note.textContent = P.md(p.day) + ": " + p.top + " lb × " + p.reps.join(", "); };
+      var show = function () { note.textContent = P.md(p.day) + ": " + p.top + " lb" + (p.detail || ""); };
       var hit = svgEl("circle", { cx: x(i), cy: y(p.top), r: 14, class: "hit" });
       hit.addEventListener("pointerenter", show);
       hit.addEventListener("click", show);
@@ -204,11 +195,12 @@
     det.appendChild(el("summary", "small", "Table"));
     var table = el("table", "small");
     var hr = el("tr");
-    ["Date", "Top lb", "Reps"].forEach(function (h) { hr.appendChild(el("th", null, h)); });
+    opts.cols.forEach(function (h) { hr.appendChild(el("th", null, h)); });
     table.appendChild(hr);
     pts.forEach(function (p) {
       var tr = el("tr");
-      tr.append(el("td", null, P.md(p.day)), el("td", null, String(p.top)), el("td", null, p.reps.join(", ")));
+      tr.append(el("td", null, P.md(p.day)), el("td", null, String(p.top)));
+      if (opts.cols.length > 2) tr.appendChild(el("td", null, p.reps.join(", ")));
       table.appendChild(tr);
     });
     det.appendChild(table);
@@ -216,13 +208,142 @@
     return card;
   }
 
+  /* ---- top set weight per lift ---- */
+
+  function renderLift(ex, sets) {
+    var byDay = {};
+    sets.filter(function (s) { return s.exercise === ex.id; }).forEach(function (s) {
+      (byDay[s.day] = byDay[s.day] || []).push(s);
+    });
+    var pts = Object.keys(byDay).sort().map(function (d) {
+      var list = byDay[d].sort(function (a, b) { return a.set_no - b.set_no; });
+      var top = list.reduce(function (m, s) { return s.weight != null && s.weight > m ? s.weight : m; }, -1);
+      var reps = list.map(function (s) { return s.reps == null ? "?" : s.reps; });
+      return { day: d, top: top, reps: reps, detail: " × " + reps.join(", ") };
+    }).filter(function (p) { return p.top >= 0; });
+    return lineCard(ex.name, pts, { empty: "No sets logged yet.", pad: 5, cols: ["Date", "Top lb", "Reps"] });
+  }
+
+  /* ---- body weight check-ins ---- */
+
+  function renderBody(daily) {
+    var pts = daily.filter(function (r) { return r.body_weight != null; })
+      .map(function (r) { return { day: r.day, top: Number(r.body_weight) }; });
+    var host = $("bodyweight");
+    host.textContent = "";
+    host.appendChild(lineCard(!pts.length ? "Weigh-ins" : pts.length + (pts.length === 1 ? " weigh-in" : " weigh-ins"), pts,
+      { empty: "No weigh-ins yet. Add one from any day.", pad: 2, decimals: true, cols: ["Date", "lb"] }));
+  }
+
+  /* ---- steps: the last 14 days ---- */
+
+  function renderSteps(daily) {
+    var byDay = {};
+    daily.forEach(function (r) { if (r.steps != null) byDay[r.day] = r.steps; });
+    var t = P.parseDay(P.today());
+    var days = [];
+    for (var i = 13; i >= 0; i--) {
+      var d = P.fmtDay(P.addDays(t, -i));
+      days.push({ day: d, v: byDay[d] });
+    }
+    var host = $("steps");
+    host.textContent = "";
+    var head = el("div", "ex-head");
+    head.appendChild(el("h3", null, "Last 14 days"));
+    host.appendChild(head);
+    var have = days.filter(function (d) { return d.v != null; });
+    if (!have.length) {
+      host.appendChild(el("p", "muted small", "No steps logged yet. Add them from Today on the calendar."));
+      return;
+    }
+    var week = days.slice(7).filter(function (d) { return d.v != null; });
+    var avg = week.length ? Math.round(week.reduce(function (s, d) { return s + d.v; }, 0) / week.length) : null;
+    if (avg != null) head.appendChild(el("span", "target steps", avg.toLocaleString() + " avg / 7d"));
+
+    var W = 320, H = 140, padL = 30, padB = 22, padT = 16;
+    var max = Math.max.apply(null, have.map(function (d) { return d.v; }));
+    max = Math.max(1000, Math.ceil(max / 2000) * 2000);
+    var bw = (W - padL) / days.length;
+    var y = function (v) { return H - padB - (v / max) * (H - padB - padT); };
+    var svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, role: "img",
+      "aria-label": "Steps per day: " + have.map(function (d) { return P.md(d.day) + " " + d.v; }).join(", ") });
+    [0, max].forEach(function (v) {
+      svg.appendChild(svgEl("line", { x1: padL, x2: W, y1: y(v), y2: y(v), class: "axis" }));
+      var tl = svgEl("text", { x: padL - 6, y: y(v) + 4, class: "tick", "text-anchor": "end" });
+      tl.textContent = v >= 1000 ? Math.round(v / 1000) + "k" : String(v);
+      svg.appendChild(tl);
+    });
+    var note = el("p", "muted small chart-note", "Tap a day for details.");
+    days.forEach(function (d, i) {
+      var x = padL + i * bw + bw * 0.18, w = bw * 0.64;
+      if (d.v != null && d.v > 0) {
+        var top = y(d.v), h = y(0) - top, r = Math.min(3, h);
+        svg.appendChild(svgEl("path", { class: "bar steps",
+          d: "M" + x + "," + y(0) + "V" + (top + r) + "q0,-" + r + " " + r + ",-" + r +
+             "H" + (x + w - r) + "q" + r + ",0 " + r + "," + r + "V" + y(0) + "Z" }));
+      }
+      if (i % 7 === 0 || i === days.length - 1) {
+        var lab = svgEl("text", { x: x + w / 2, y: H - 6, class: "tick", "text-anchor": "middle" });
+        lab.textContent = P.md(d.day);
+        svg.appendChild(lab);
+      }
+      var show = function () { note.textContent = P.nice(d.day) + ": " + (d.v == null ? "not logged" : d.v.toLocaleString() + " steps"); };
+      var hit = svgEl("rect", { x: padL + i * bw, y: padT, width: bw, height: H - padT - padB, class: "hit" });
+      hit.addEventListener("pointerenter", show);
+      hit.addEventListener("click", show);
+      svg.appendChild(hit);
+    });
+    host.append(svg, note);
+  }
+
+  /* ---- other workouts: totals per kind ---- */
+
+  function renderOthers(acts) {
+    var host = $("others");
+    host.textContent = "";
+    if (!acts.length) {
+      host.appendChild(el("p", "muted small", "Nothing yet. Add a walk, hike, yoga or your own from any day."));
+      return;
+    }
+    var by = {};
+    acts.forEach(function (a) {
+      var g = by[a.name] = by[a.name] || { name: a.name, n: 0, min: 0, last: a.day };
+      g.n++; g.min += a.minutes || 0;
+      if (a.day > g.last) g.last = a.day;
+    });
+    var list = Object.keys(by).map(function (k) { return by[k]; })
+      .sort(function (a, b) { return b.min - a.min || b.n - a.n; });
+    var top = Math.max(1, list[0].min);
+    var total = list.reduce(function (s, g) { return s + g.min; }, 0);
+    var head = el("div", "ex-head");
+    head.append(el("h3", null, acts.length + (acts.length === 1 ? " session" : " sessions")),
+      el("span", "target other", total + " min"));
+    host.appendChild(head);
+    list.forEach(function (g) {
+      var row = el("div", "hbar");
+      var lab = el("div", "hbar-lab");
+      lab.append(el("strong", null, g.name),
+        el("span", "muted small", g.n + "× · " + g.min + " min · last " + P.md(g.last)));
+      var track = el("div", "hbar-track");
+      var fill = el("i");
+      fill.style.width = Math.max(2, g.min / top * 100) + "%";
+      track.appendChild(fill);
+      row.append(lab, track);
+      host.appendChild(row);
+    });
+  }
+
   function load() {
     return Promise.all([
       K.db.from("sessions").select("day, kind, done, short, ride_minutes").eq("done", true),
-      K.db.from("sets").select("day, exercise, set_no, weight, reps").order("day")
+      K.db.from("sets").select("day, exercise, set_no, weight, reps").order("day"),
+      K.db.from("daily").select("day, steps, body_weight").order("day"),
+      K.db.from("activities").select("day, name, minutes").order("day")
     ]).then(function (res) {
-      if (res[0].error) throw res[0].error;
-      if (res[1].error) throw res[1].error;
+      res.forEach(function (r) { if (r.error) throw r.error; });
+      renderSteps(res[2].data || []);
+      renderBody(res[2].data || []);
+      renderOthers(res[3].data || []);
       var done = res[0].data || [];
       var sets = (res[1].data || []).map(function (s) {
         s.weight = s.weight == null ? null : Number(s.weight);

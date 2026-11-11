@@ -40,17 +40,18 @@ begin
   end if;
 
   -- steps, raw samples (start|end|steps|source): de-duplicate, then daily totals
+  -- (The split line is "parts_arr", not "f": f is also a variable here.)
   with lines as (
-    select string_to_array(btrim(l, E' \r\t'), '|') f
+    select string_to_array(btrim(l, E' \r\t'), '|') as parts_arr
       from unnest(string_to_array(coalesce(p_steps, ''), E'\n')) l
   ), samp as (
-    select btrim(f[1])::timestamp as st,
-           greatest(btrim(f[2])::timestamp, btrim(f[1])::timestamp + interval '1 second') as en,
-           nullif(regexp_replace(f[3], '[^0-9.]', '', 'g'), '')::numeric as v,
-           f[4] ilike '%watch%' as watch
+    select btrim(lines.parts_arr[1])::timestamp as st,
+           greatest(btrim(lines.parts_arr[2])::timestamp, btrim(lines.parts_arr[1])::timestamp + interval '1 second') as en,
+           nullif(regexp_replace(lines.parts_arr[3], '[^0-9.]', '', 'g'), '')::numeric as v,
+           lines.parts_arr[4] ilike '%watch%' as watch
       from lines
-     where coalesce(array_length(f, 1), 0) = 4
-       and btrim(f[1]) ~ ts_re and btrim(f[2]) ~ ts_re
+     where coalesce(array_length(lines.parts_arr, 1), 0) = 4
+       and btrim(lines.parts_arr[1]) ~ ts_re and btrim(lines.parts_arr[2]) ~ ts_re
   ), parts as (
     select bk, sp.watch,
            sp.v * extract(epoch from (least(sp.en, bk + interval '15 minutes') - greatest(sp.st, bk)))

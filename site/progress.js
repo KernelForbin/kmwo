@@ -1,4 +1,5 @@
-/* kmwo: progress. Stat tiles, sessions per week, top set weight per lift. */
+/* kmwo: progress. Stat tiles, sessions per week, top set weight per lift,
+   steps, body weight, and the daily checklist (meds, Metamucil, water). */
 (function () {
   "use strict";
 
@@ -388,6 +389,132 @@
     host.append(svg, note);
   }
 
+  /* ---- daily checklist: meds and Metamucil ticks, water ---- */
+
+  var HABITS = [{ key: "meds", name: "Meds" }, { key: "metamucil", name: "Metamucil" }];
+
+  function last14() {
+    var t = P.parseDay(P.today()), out = [];
+    for (var i = 13; i >= 0; i--) out.push(P.fmtDay(P.addDays(t, -i)));
+    return out;
+  }
+
+  // Consecutive days ticked, counting back. Today counts if ticked; if not
+  // yet, the streak runs from yesterday so it doesn't drop to 0 each morning.
+  function streakOf(byDay, key) {
+    var t = P.parseDay(P.today()), n = 0;
+    var start = byDay[P.today()] && byDay[P.today()][key] ? 0 : 1;
+    for (var i = start; i < 3650; i++) {
+      var r = byDay[P.fmtDay(P.addDays(t, -i))];
+      if (r && r[key]) n++; else break;
+    }
+    return n;
+  }
+
+  function checkDetail(day, r) {
+    if (!r) return P.nice(day) + ": nothing logged";
+    return P.nice(day) + ": " + HABITS.map(function (h) { return h.name + (r[h.key] ? " ✓" : " ✗"); }).join(", ") +
+      " · " + (r.water_ml || 0).toLocaleString() + " ml water";
+  }
+
+  function renderHabits(rows) {
+    var byDay = {};
+    rows.forEach(function (r) { byDay[r.day] = r; });
+    var first = rows.length ? rows[0].day : null; // checklist started here
+    var t = P.today();
+    var days = last14();
+    var host = $("habits");
+    host.textContent = "";
+    var head = el("div", "ex-head");
+    head.appendChild(el("h3", null, "Last 14 days"));
+    host.appendChild(head);
+    if (!rows.length) {
+      host.appendChild(el("p", "muted small", "Nothing yet. Tick Take meds and Drink Metamucil under Today on the calendar."));
+      return;
+    }
+    var note = el("p", "muted small chart-note", "Tap a day for details.");
+    HABITS.forEach(function (h) {
+      // Out of the last 7 days the checklist existed, today only once ticked.
+      var week = days.slice(7).filter(function (d) { return d >= first && (d < t || (byDay[d] && byDay[d][h.key])); });
+      var hits = week.filter(function (d) { return byDay[d] && byDay[d][h.key]; }).length;
+      var s = streakOf(byDay, h.key);
+      var row = el("div", "habit");
+      var lab = el("div", "habit-lab");
+      lab.append(el("strong", null, h.name),
+        el("span", "muted small", (week.length ? hits + "/" + week.length + " this week" : "") +
+          (s ? (week.length ? " · " : "") + s + "-day streak" : "")));
+      var grid = el("div", "habit-grid");
+      days.forEach(function (d) {
+        var on = !!(byDay[d] && byDay[d][h.key]);
+        var c = el("button", "hcell" + (on ? " on" : "") + (d < first ? " na" : "") + (d === t ? " today" : ""));
+        c.type = "button";
+        c.setAttribute("aria-label", P.nice(d) + ": " + h.name + (on ? " done" : d < first ? " not tracked" : " not done"));
+        c.addEventListener("click", function () { note.textContent = checkDetail(d, byDay[d]); });
+        grid.appendChild(c);
+      });
+      row.append(lab, grid);
+      host.appendChild(row);
+    });
+    var ends = el("div", "habit-ends muted small");
+    ends.append(el("span", null, P.md(days[0])), el("span", null, "Today"));
+    host.append(ends, note);
+  }
+
+  function renderWater(rows) {
+    var byDay = {};
+    rows.forEach(function (r) { byDay[r.day] = r.water_ml; });
+    var days = last14().map(function (d) { return { day: d, v: byDay[d] }; });
+    var host = $("water");
+    host.textContent = "";
+    var head = el("div", "ex-head");
+    head.appendChild(el("h3", null, "Water"));
+    host.appendChild(head);
+    var have = days.filter(function (d) { return d.v > 0; });
+    if (!have.length) {
+      host.appendChild(el("p", "muted small", "No water logged yet. Tap + under Today on the calendar."));
+      return;
+    }
+    // Average over the last 7 days with water logged (today too, once it has some).
+    var week = days.slice(7, 13).concat(days[13].v > 0 ? [days[13]] : []).filter(function (d) { return d.v > 0; });
+    if (week.length) {
+      var avg = Math.round(week.reduce(function (s, d) { return s + d.v; }, 0) / week.length / 100) * 100;
+      head.appendChild(el("span", "target water", avg.toLocaleString() + " ml avg / 7d"));
+    }
+    var W = 320, H = 140, padL = 30, padB = 22, padT = 16;
+    var max = Math.max(1000, Math.ceil(Math.max.apply(null, have.map(function (d) { return d.v; })) / 1000) * 1000);
+    var bw = (W - padL) / days.length;
+    var y = function (v) { return H - padB - (v / max) * (H - padB - padT); };
+    var svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, role: "img",
+      "aria-label": "Water per day: " + have.map(function (d) { return P.md(d.day) + " " + d.v + " ml"; }).join(", ") });
+    [0, max].forEach(function (v) {
+      svg.appendChild(svgEl("line", { x1: padL, x2: W, y1: y(v), y2: y(v), class: "axis" }));
+      var tl = svgEl("text", { x: padL - 6, y: y(v) + 4, class: "tick", "text-anchor": "end" });
+      tl.textContent = v ? (v / 1000) + "L" : "0";
+      svg.appendChild(tl);
+    });
+    var note = el("p", "muted small chart-note", "Tap a day for details.");
+    days.forEach(function (d, i) {
+      var x = padL + i * bw + bw * 0.18, w = bw * 0.64;
+      if (d.v > 0) {
+        var top = y(d.v), h = y(0) - top, r = Math.min(3, h);
+        svg.appendChild(svgEl("path", { class: "bar water",
+          d: "M" + x + "," + y(0) + "V" + (top + r) + "q0,-" + r + " " + r + ",-" + r +
+             "H" + (x + w - r) + "q" + r + ",0 " + r + "," + r + "V" + y(0) + "Z" }));
+      }
+      if (i % 7 === 0 || i === days.length - 1) {
+        var lab = svgEl("text", { x: x + w / 2, y: H - 6, class: "tick", "text-anchor": "middle" });
+        lab.textContent = P.md(d.day);
+        svg.appendChild(lab);
+      }
+      var show = function () { note.textContent = P.nice(d.day) + ": " + (d.v > 0 ? d.v.toLocaleString() + " ml" : "none logged"); };
+      var hit = svgEl("rect", { x: padL + i * bw, y: padT, width: bw, height: H - padT - padB, class: "hit" });
+      hit.addEventListener("pointerenter", show);
+      hit.addEventListener("click", show);
+      svg.appendChild(hit);
+    });
+    host.append(svg, note);
+  }
+
   /* ---- other workouts: totals per kind ---- */
 
   function renderOthers(acts) {
@@ -431,9 +558,12 @@
       K.db.from("sets").select("day, exercise, set_no, weight, reps").order("day"),
       K.db.from("daily").select("day, steps, body_weight").order("day"),
       K.db.from("activities").select("day, name, minutes").order("day"),
-      K.db.from("profile").select("weight_goal").maybeSingle()
+      K.db.from("profile").select("weight_goal").maybeSingle(),
+      K.db.from("checklist").select("day, meds, metamucil, water_ml").order("day")
     ]).then(function (res) {
       res.forEach(function (r) { if (r.error) throw r.error; });
+      renderHabits(res[5].data || []);
+      renderWater(res[5].data || []);
       renderSteps(res[2].data || []);
       renderMonthly(res[2].data || []);
       var goal = res[4].data && res[4].data.weight_goal != null ? Number(res[4].data.weight_goal) : null;

@@ -366,6 +366,18 @@ code { font: 500 .82rem/1.4 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 .chart .bar.steps { fill: var(--accent-2); }
 .target.steps { color: var(--accent-2); background: color-mix(in srgb, var(--accent-2) 14%, transparent); }
 .target.other { color: var(--other); background: color-mix(in srgb, var(--other) 14%, transparent); }
+.chart .bar.water { fill: var(--water); }
+.target.water { color: var(--water); background: color-mix(in srgb, var(--water) 14%, transparent); }
+/* checklist grid on Progress: one row of 14 day cells per habit */
+.habit { margin-top: 14px; }
+.habit-lab { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.habit-lab strong { font-size: .92rem; }
+.habit-grid { display: grid; grid-template-columns: repeat(14, 1fr); gap: 3px; }
+.hcell { aspect-ratio: 1; padding: 0; min-width: 0; border-radius: 5px; border: 0; background: var(--surface-2); }
+.hcell.on { background: var(--ride); }
+.hcell.na { background: transparent; border: 1px dashed var(--line-strong); }
+.hcell.today:not(.on) { box-shadow: inset 0 0 0 1.5px var(--ride); }
+.habit-ends { display: flex; justify-content: space-between; margin-top: 6px; }
 .goalrow { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 4px 0 6px; }
 .hbar { padding: 10px 0; border-top: 1px solid var(--line); }
 .ex-head + .hbar { margin-top: 10px; }

@@ -13,6 +13,7 @@
   --lift: #5b8cff;
   --ride: #2dd4a7;
   --other: #ff9f4a;
+  --water: #4cc3ff;
   --accent: #5b8cff;
   --accent-2: #8b6bff;
   --on-accent: #fff;
@@ -35,6 +36,7 @@
     --lift: #2f66f0;
     --ride: #0c9a78;
     --other: #d0670e;
+    --water: #0a7fc0;
     --accent: #2f66f0;
     --accent-2: #6a4cf0;
     --danger: #d43c3c;
@@ -54,6 +56,7 @@
   --lift: #2f66f0;
   --ride: #0c9a78;
   --other: #d0670e;
+  --water: #0a7fc0;
   --accent: #2f66f0;
   --accent-2: #6a4cf0;
   --danger: #d43c3c;
@@ -188,6 +191,33 @@ main.center .primary { margin-top: 14px; min-width: 240px; }
 .addrow.today .chip.session.ride.set { color: var(--ride); background: color-mix(in srgb, var(--ride) 16%, transparent); border-color: transparent; }
 .addrow.today .chip.session.skipped { color: var(--muted); }
 .addrow.today .chip.session .tick { width: 15px; height: 15px; stroke-width: 3; }
+
+/* daily checklist: two tick-boxes and a water counter */
+.checklist { margin-top: 10px; padding: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.check {
+  display: flex; align-items: center; gap: 10px; text-align: left; font-weight: 600; font-size: .92rem;
+  padding: 12px; border-radius: 12px; background: var(--surface-2); border-color: transparent; min-height: 48px;
+}
+.check .box {
+  width: 22px; height: 22px; flex: none; border-radius: 7px; border: 2px solid var(--line-strong);
+  display: grid; place-items: center; transition: background .15s, border-color .15s;
+}
+.check .box svg { width: 14px; height: 14px; stroke-width: 3.2; color: var(--on-accent); opacity: 0; }
+.check[aria-pressed=true] { background: color-mix(in srgb, var(--ride) 14%, transparent); }
+.check[aria-pressed=true] .box { background: var(--ride); border-color: var(--ride); }
+.check[aria-pressed=true] .box svg { opacity: 1; }
+.water {
+  grid-column: 1 / -1; display: flex; align-items: center; gap: 10px;
+  padding: 8px 8px 8px 12px; border-radius: 12px; background: var(--surface-2);
+}
+.water > svg { width: 22px; height: 22px; color: var(--water); flex: none; }
+.water .wlabel { font-weight: 600; font-size: .92rem; flex: 1; }
+.water output { font-weight: 800; font-size: 1.15rem; font-variant-numeric: tabular-nums; min-width: 4.5em; text-align: right; }
+.water output small { font-weight: 600; font-size: .78rem; color: var(--muted); margin-left: 2px; }
+.water.some output { color: var(--water); }
+.water button { width: 44px; height: 44px; padding: 0; border-radius: 50%; display: grid; place-items: center; background: var(--surface); border-color: var(--line-strong); }
+.water button.plus { background: color-mix(in srgb, var(--water) 18%, var(--surface)); color: var(--water); border-color: transparent; }
+.water button svg { width: 20px; height: 20px; stroke-width: 2.4; }
 .legend .dot.missed { box-shadow: inset 0 0 0 1.5px var(--muted); }
 
 /* day log */

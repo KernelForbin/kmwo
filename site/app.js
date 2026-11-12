@@ -1,4 +1,5 @@
-/* kmwo: home. Next up hero, a Today strip, and a month calendar (‹ › or
+/* kmwo: home. Next up hero, a Today strip with the daily checklist (meds,
+   Metamucil, water), and a month calendar (‹ › or
    swipe, back to Jan 2026) with plan sessions, extras and daily steps.
    Any day opens /day?d=... */
 (function () {
@@ -166,6 +167,60 @@
     });
   }
 
+  /* ---- daily checklist: meds, Metamucil, water (100 ml steps) ---- */
+
+  var WATER_STEP = 100, WATER_MAX = 10000;
+  var ck = { day: null, meds: false, metamucil: false, water_ml: 0 };
+  var ckSaving = false, ckDirty = false;
+
+  function renderChecklist() {
+    document.querySelectorAll("#checklist .check").forEach(function (b) {
+      b.setAttribute("aria-pressed", ck[b.dataset.item] ? "true" : "false");
+    });
+    var out = $("water-ml");
+    out.textContent = ck.water_ml.toLocaleString();
+    var u = document.createElement("small");
+    u.textContent = "ml";
+    out.appendChild(u);
+    $("water").classList.toggle("some", ck.water_ml > 0);
+    $("water-minus").disabled = ck.water_ml <= 0;
+    $("water-plus").disabled = ck.water_ml >= WATER_MAX;
+  }
+
+  function loadChecklist() {
+    var t = P.today();
+    return K.db.from("checklist").select("meds, metamucil, water_ml").eq("day", t).maybeSingle()
+      .then(function (r) {
+        if (r.error) { K.showError(r.error.message); return; }
+        if (ckSaving || ckDirty) return; // a tap is on its way; keep what's on screen
+        var d = r.data || {};
+        ck = { day: t, meds: !!d.meds, metamucil: !!d.metamucil, water_ml: d.water_ml || 0 };
+        renderChecklist();
+      });
+  }
+
+  // One save in flight at a time; taps made meanwhile go in the next save.
+  function saveChecklist() {
+    if (ckSaving) { ckDirty = true; return; }
+    ckSaving = true; ckDirty = false;
+    K.db.from("checklist").upsert({
+      day: ck.day, meds: ck.meds, metamucil: ck.metamucil, water_ml: ck.water_ml,
+      updated_at: new Date().toISOString()
+    }, { onConflict: "user_id,day" }).then(function (r) {
+      ckSaving = false;
+      if (r.error) K.showError("Couldn't save the checklist: " + r.error.message);
+      else K.showError("");
+      if (ckDirty) saveChecklist();
+    });
+  }
+
+  function changeChecklist(fn) {
+    if (ck.day !== P.today()) { loadChecklist(); return; } // it's a new day: start fresh
+    fn();
+    renderChecklist();
+    saveChecklist();
+  }
+
   /* ---- month calendar ---- */
 
   function monthOf(day) { return day.slice(0, 7); }
@@ -309,6 +364,23 @@
     $("prev").addEventListener("click", function () { go(-1); });
     $("nextm").addEventListener("click", function () { go(1); });
     $("skip").addEventListener("click", onSkip);
+    document.querySelectorAll("#checklist .check").forEach(function (b) {
+      b.addEventListener("click", function () {
+        changeChecklist(function () { ck[b.dataset.item] = !ck[b.dataset.item]; });
+      });
+    });
+    $("water-plus").addEventListener("click", function () {
+      changeChecklist(function () { ck.water_ml = Math.min(WATER_MAX, ck.water_ml + WATER_STEP); });
+    });
+    $("water-minus").addEventListener("click", function () {
+      changeChecklist(function () { ck.water_ml = Math.max(0, ck.water_ml - WATER_STEP); });
+    });
+    // Coming back to the app on a new day shows a fresh checklist.
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden && ck.day && ck.day !== P.today()) { load(); loadChecklist(); }
+    });
+    renderChecklist();
+    loadChecklist();
     // Swipe left/right on the calendar to change month.
     var cal = document.querySelector(".cal"), x0 = null, y0 = null;
     cal.addEventListener("touchstart", function (e) { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });

@@ -51,6 +51,21 @@
 
   <h2>Today</h2>
   <div class="addrow today" id="today"></div>
+  <div class="card checklist" id="checklist">
+    <button type="button" class="check" data-item="meds" aria-pressed="false">
+      <span class="box"><svg class="i" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>Take meds</button>
+    <button type="button" class="check" data-item="metamucil" aria-pressed="false">
+      <span class="box"><svg class="i" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>Drink Metamucil</button>
+    <div class="water" id="water">
+      <svg class="i" viewBox="0 0 24 24"><path d="M12 3.5c3.5 4.2 6 7.6 6 10.6a6 6 0 0 1-12 0c0-3 2.5-6.4 6-10.6z"/></svg>
+      <span class="wlabel">Water</span>
+      <button type="button" class="minus" id="water-minus" aria-label="100 ml less">
+        <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+      <output id="water-ml" aria-live="polite">0<small>ml</small></output>
+      <button type="button" class="plus" id="water-plus" aria-label="100 ml more">
+        <svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+    </div>
+  </div>
 
   <h2>Calendar</h2>
   <div class="cal">

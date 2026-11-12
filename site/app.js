@@ -167,9 +167,9 @@
     });
   }
 
-  /* ---- daily checklist: meds, Metamucil, water (100 ml steps) ---- */
+  /* ---- daily checklist: meds, Metamucil, water (500 ml steps) ---- */
 
-  var WATER_STEP = 100, WATER_MAX = 10000;
+  var WATER_STEP = 500, WATER_MAX = 10000;
   var ck = { day: null, meds: false, metamucil: false, water_ml: 0 };
   var ckSaving = false, ckDirty = false;
 
@@ -370,10 +370,11 @@
       });
     });
     $("water-plus").addEventListener("click", function () {
-      changeChecklist(function () { ck.water_ml = Math.min(WATER_MAX, ck.water_ml + WATER_STEP); });
+      // Snaps to the 500 grid, so an older 400 goes to 500, then 1,000.
+      changeChecklist(function () { ck.water_ml = Math.min(WATER_MAX, Math.floor(ck.water_ml / WATER_STEP) * WATER_STEP + WATER_STEP); });
     });
     $("water-minus").addEventListener("click", function () {
-      changeChecklist(function () { ck.water_ml = Math.max(0, ck.water_ml - WATER_STEP); });
+      changeChecklist(function () { ck.water_ml = Math.max(0, Math.ceil(ck.water_ml / WATER_STEP) * WATER_STEP - WATER_STEP); });
     });
     // Coming back to the app on a new day shows a fresh checklist.
     document.addEventListener("visibilitychange", function () {

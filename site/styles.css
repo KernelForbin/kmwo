@@ -66,6 +66,9 @@
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+/* Quick repeated taps on a button shouldn't trigger iPhone's double-tap zoom.
+   Pinch-zoom still works. */
+a, button, input, select, textarea, label, summary, .chart svg { touch-action: manipulation; }
 [hidden] { display: none !important; }
 html { background: var(--bg); }
 body {

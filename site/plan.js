@@ -60,7 +60,7 @@ window.KMWO_PLAN = (function () {
     return Math.min(WEEKS, Math.max(1, Math.floor(diff / 7) + 1));
   }
 
-  function setsFor(week) { return week <= 2 ? 2 : 3; }
+  function setsFor() { return 3; } // 3 sets every week (was 2 in weeks 1-2)
   function rideMinutes(week) { return week <= 2 ? 20 : 30; }
 
   function liftText(week) {

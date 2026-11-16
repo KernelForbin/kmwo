@@ -112,7 +112,7 @@
     }
     box.className = "hero " + n.kind;
     $("next-kind").textContent = P.label(n.kind);
-    $("next-when").textContent = P.nice(n.day) + " · 8:15 pm";
+    $("next-when").textContent = P.nice(n.day) + " · 7:30 am";
     $("next-desc").textContent = P.describe(n.kind, n.week);
     $("next-count").textContent = "Session " + n.number + " of " + P.TOTAL;
     $("next-cta").textContent = "Log it →";
@@ -178,9 +178,9 @@
       b.setAttribute("aria-pressed", ck[b.dataset.item] ? "true" : "false");
     });
     var out = $("water-ml");
-    out.textContent = ck.water_ml.toLocaleString();
+    out.textContent = P.litres(ck.water_ml); // stored in ml, shown in L
     var u = document.createElement("small");
-    u.textContent = "ml";
+    u.textContent = "L";
     out.appendChild(u);
     $("water").classList.toggle("some", ck.water_ml > 0);
     $("water-minus").disabled = ck.water_ml <= 0;

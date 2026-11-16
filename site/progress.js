@@ -414,7 +414,7 @@
   function checkDetail(day, r) {
     if (!r) return P.nice(day) + ": nothing logged";
     return P.nice(day) + ": " + HABITS.map(function (h) { return h.name + (r[h.key] ? " ✓" : " ✗"); }).join(", ") +
-      " · " + (r.water_ml || 0).toLocaleString() + " ml water";
+      " · " + P.litres(r.water_ml) + " L water";
   }
 
   function renderHabits(rows) {
@@ -478,14 +478,14 @@
     var week = days.slice(7, 13).concat(days[13].v > 0 ? [days[13]] : []).filter(function (d) { return d.v > 0; });
     if (week.length) {
       var avg = Math.round(week.reduce(function (s, d) { return s + d.v; }, 0) / week.length / 100) * 100;
-      head.appendChild(el("span", "target water", avg.toLocaleString() + " ml avg / 7d"));
+      head.appendChild(el("span", "target water", P.litres(avg) + " L avg / 7d"));
     }
     var W = 320, H = 140, padL = 30, padB = 22, padT = 16;
     var max = Math.max(1000, Math.ceil(Math.max.apply(null, have.map(function (d) { return d.v; })) / 1000) * 1000);
     var bw = (W - padL) / days.length;
     var y = function (v) { return H - padB - (v / max) * (H - padB - padT); };
     var svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, role: "img",
-      "aria-label": "Water per day: " + have.map(function (d) { return P.md(d.day) + " " + d.v + " ml"; }).join(", ") });
+      "aria-label": "Water per day: " + have.map(function (d) { return P.md(d.day) + " " + P.litres(d.v) + " L"; }).join(", ") });
     [0, max].forEach(function (v) {
       svg.appendChild(svgEl("line", { x1: padL, x2: W, y1: y(v), y2: y(v), class: "axis" }));
       var tl = svgEl("text", { x: padL - 6, y: y(v) + 4, class: "tick", "text-anchor": "end" });
@@ -506,7 +506,7 @@
         lab.textContent = P.md(d.day);
         svg.appendChild(lab);
       }
-      var show = function () { note.textContent = P.nice(d.day) + ": " + (d.v > 0 ? d.v.toLocaleString() + " ml" : "none logged"); };
+      var show = function () { note.textContent = P.nice(d.day) + ": " + (d.v > 0 ? P.litres(d.v) + " L" : "none logged"); };
       var hit = svgEl("rect", { x: padL + i * bw, y: padT, width: bw, height: H - padT - padB, class: "hit" });
       hit.addEventListener("pointerenter", show);
       hit.addEventListener("click", show);

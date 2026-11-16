@@ -60,6 +60,9 @@ window.KMWO_PLAN = (function () {
     return Math.min(WEEKS, Math.max(1, Math.floor(diff / 7) + 1));
   }
 
+  // Water is stored in ml; shown in litres: 1500 -> "1.5", 2000 -> "2".
+  function litres(ml) { return String(Math.round((ml || 0) / 100) / 10); }
+
   function setsFor() { return 3; } // 3 sets every week (was 2 in weeks 1-2)
   function rideMinutes(week) { return week <= 2 ? 20 : 30; }
 
@@ -133,7 +136,7 @@ window.KMWO_PLAN = (function () {
     DAY_NAMES: DAY_NAMES, EXERCISES: EXERCISES, RIDE_TYPES: RIDE_TYPES, OTHER_WORKOUTS: OTHER_WORKOUTS,
     parseDay: parseDay, fmtDay: fmtDay, addDays: addDays, today: today, isDay: isDay,
     inPlan: inPlan, weekday: weekday, plannedKind: plannedKind, weekOf: weekOf,
-    setsFor: setsFor, rideMinutes: rideMinutes, describe: describe,
+    setsFor: setsFor, litres: litres, rideMinutes: rideMinutes, describe: describe,
     scheduledDays: scheduledDays, nextUp: nextUp, skipTarget: skipTarget, label: label, md: md, nice: nice
   };
 })();

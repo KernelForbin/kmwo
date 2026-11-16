@@ -429,7 +429,7 @@
     head.appendChild(el("h3", null, "Last 14 days"));
     host.appendChild(head);
     if (!rows.length) {
-      host.appendChild(el("p", "muted small", "Nothing yet. Tick Take meds and Drink Metamucil under Today on the calendar."));
+      host.appendChild(el("p", "muted small", "Nothing yet. Tick Meds and Metamucil under Today on the calendar."));
       return;
     }
     var note = el("p", "muted small chart-note", "Tap a day for details.");

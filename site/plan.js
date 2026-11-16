@@ -19,7 +19,9 @@ window.KMWO_PLAN = (function () {
     { id: "bench", name: "Dumbbell bench press" },
     { id: "row", name: "One-arm dumbbell row", note: "each side" }
   ];
-  var RIDE_TYPES = ["Low impact", "Endurance", "HIIT", "Tabata", "Power Zone", "Other"];
+  var RIDE_TYPES = ["Lanebreak", "Low impact", "Endurance", "HIIT", "Tabata", "Power Zone", "Other"];
+  // Lanebreak difficulty. Saved with the class as "Lanebreak · Hard".
+  var RIDE_LEVELS = ["Light", "Moderate", "Hard", "Challenging", "Extreme"];
   // Starter list for "other" workouts. Names you type yourself are saved
   // (workout_types table) and offered next to these.
   var OTHER_WORKOUTS = ["Walk", "Run", "Hike", "Yoga", "Stretching", "Swim", "Sports"];
@@ -65,12 +67,13 @@ window.KMWO_PLAN = (function () {
 
   function setsFor() { return 3; } // 3 sets every week (was 2 in weeks 1-2)
   function rideMinutes(week) { return week <= 2 ? 20 : 30; }
+  function rideLevel(week) { return week <= 2 ? "Light" : "Moderate"; }
 
   function liftText(week) {
     return "Goblet squat, dumbbell bench press, one-arm row (each side): " + setsFor(week) + " sets of 10";
   }
   function rideText(week) {
-    return week <= 2 ? "Peloton, 20 min, low impact" : "Peloton, 30 min, low impact or endurance";
+    return week <= 2 ? "Peloton Lanebreak, 20 min, Light" : "Peloton Lanebreak, 30 min, Light or Moderate";
   }
   function describe(kind, week) { return kind === "lift" ? liftText(week) : rideText(week); }
 
@@ -133,7 +136,7 @@ window.KMWO_PLAN = (function () {
 
   return {
     START: START, END: END, WEEKS: WEEKS, SCHEDULE: SCHEDULE, PATTERN: PATTERN, TOTAL: TOTAL,
-    DAY_NAMES: DAY_NAMES, EXERCISES: EXERCISES, RIDE_TYPES: RIDE_TYPES, OTHER_WORKOUTS: OTHER_WORKOUTS,
+    DAY_NAMES: DAY_NAMES, EXERCISES: EXERCISES, RIDE_TYPES: RIDE_TYPES, RIDE_LEVELS: RIDE_LEVELS, rideLevel: rideLevel, OTHER_WORKOUTS: OTHER_WORKOUTS,
     parseDay: parseDay, fmtDay: fmtDay, addDays: addDays, today: today, isDay: isDay,
     inPlan: inPlan, weekday: weekday, plannedKind: plannedKind, weekOf: weekOf,
     setsFor: setsFor, litres: litres, rideMinutes: rideMinutes, describe: describe,

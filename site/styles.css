@@ -184,6 +184,7 @@ main.center .primary { margin-top: 14px; min-width: 240px; }
 .legend .dot { width: 8px; height: 8px; border-radius: 50%; }
 .legend .dot.lift { background: var(--lift); } .legend .dot.ride { background: var(--ride); }
 .legend .dot.other { background: var(--other); }
+.legend .stepsnum { font-size: .72rem; font-weight: 600; color: var(--accent-2); font-variant-numeric: tabular-nums; }
 .cell .other { position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--other); }
 .addrow.today { margin-bottom: 0; }
 .addrow.today .chip { text-decoration: none; color: var(--fg); max-width: 100%; }
@@ -247,6 +248,10 @@ main.center .primary { margin-top: 14px; min-width: 240px; }
 .seg.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .seg.four button { padding: 11px 4px; }
 .seg button.on[data-kind=skip] { color: var(--fg); }
+/* Lanebreak difficulty pills on the day page */
+.levels { display: flex; flex-wrap: wrap; gap: 6px; }
+.levels button { border-radius: 999px; padding: 9px 13px; font-weight: 600; font-size: .88rem; color: var(--muted); background: var(--surface-2); border-color: transparent; min-height: 40px; }
+.levels button[aria-checked=true] { color: var(--ride); background: color-mix(in srgb, var(--ride) 16%, transparent); border-color: color-mix(in srgb, var(--ride) 45%, transparent); }
 .skip-desc { margin: 0 2px 4px; }
 /* skipped days and the one-tap skip under the hero */
 .cell .skipx { width: 12px; height: 12px; stroke-width: 2.5; color: var(--muted); }

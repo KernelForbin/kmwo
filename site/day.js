@@ -312,14 +312,47 @@
     saveLabel();
   }
 
+  /* Ride class, plus a Lanebreak difficulty. Both are saved in ride_type
+     as "Lanebreak · Hard"; other classes are saved as just their name. */
+  var rideLevel = null;
+
+  function splitRideType(s) {
+    var p = String(s || "").split(" · ");
+    return { type: p[0], level: P.RIDE_LEVELS.indexOf(p[1]) !== -1 ? p[1] : null };
+  }
+
+  function rideTypeValue() {
+    var t = $("ride-type").value;
+    return t === "Lanebreak" && rideLevel ? t + " · " + rideLevel : t;
+  }
+
+  function renderRideLevel() {
+    $("levelfield").hidden = $("ride-type").value !== "Lanebreak";
+    Array.prototype.forEach.call($("ride-level").children, function (b) {
+      b.setAttribute("aria-checked", b.dataset.level === rideLevel ? "true" : "false");
+    });
+  }
+
   function fillRideTypes() {
     P.RIDE_TYPES.forEach(function (t) {
       var o = el("option", null, t);
       o.value = t;
       $("ride-type").appendChild(o);
     });
+    P.RIDE_LEVELS.forEach(function (lv) {
+      var b = el("button", null, lv);
+      b.type = "button";
+      b.dataset.level = lv;
+      b.setAttribute("role", "radio");
+      b.addEventListener("click", function () { rideLevel = lv; renderRideLevel(); });
+      $("ride-level").appendChild(b);
+    });
+    $("ride-type").addEventListener("change", function () {
+      if ($("ride-type").value === "Lanebreak" && !rideLevel) rideLevel = P.rideLevel(week);
+      renderRideLevel();
+    });
     $("ride-hint").textContent = week >= 5
-      ? "From week 5, one ride a week can be a harder class (HIIT, Tabata, Power Zone). Optional."
+      ? "From week 5, one ride a week can be Hard or above. Optional."
       : P.describe("ride", week) + ".";
   }
 
@@ -384,14 +417,25 @@
         $("short").checked = !!existing.short;
         $("note").value = existing.note || "";
         $("ride-min").value = existing.ride_minutes || P.rideMinutes(week);
-        if (existing.ride_type) $("ride-type").value = existing.ride_type;
+        if (existing.ride_type) {
+          var rt = splitRideType(existing.ride_type);
+          if (P.RIDE_TYPES.indexOf(rt.type) !== -1) $("ride-type").value = rt.type;
+          rideLevel = rt.level;
+        }
       } else {
         var k = params.get("k");
         startKind = k === "lift" || k === "ride" ? k : (P.plannedKind(day) || "none");
-        // Last ride's length and class, but never under this week's plan.
+        // Last ride's length, but never under this week's plan. New rides
+        // start as Lanebreak at the last Lanebreak difficulty, else the plan's.
         $("ride-min").value = Math.max(lastRide ? lastRide.ride_minutes : 0, P.rideMinutes(week));
-        if (lastRide && lastRide.ride_type) $("ride-type").value = lastRide.ride_type;
+        $("ride-type").value = "Lanebreak";
+        var lastLb = sessions.filter(function (s) {
+          return s.kind === "ride" && s.day < day && splitRideType(s.ride_type).level;
+        }).sort(function (a, b) { return a.day < b.day ? 1 : -1; })[0];
+        rideLevel = lastLb ? splitRideType(lastLb.ride_type).level : P.rideLevel(week);
       }
+      if ($("ride-type").value === "Lanebreak" && !rideLevel) rideLevel = P.rideLevel(week);
+      renderRideLevel();
       $("clear").hidden = !(existing || hadExtras);
 
       var planned = P.plannedKind(day);
@@ -418,7 +462,7 @@
       day: day, kind: kind, done: true, short: short,
       note: $("note").value.trim() || null,
       ride_minutes: kind === "ride" && !short ? num($("ride-min").value) : null,
-      ride_type: kind === "ride" && !short ? $("ride-type").value : null
+      ride_type: kind === "ride" && !short ? rideTypeValue() : null
     };
     var setRows = [];
     if (kind === "lift" && !short) {

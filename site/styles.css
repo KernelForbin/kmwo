@@ -184,7 +184,7 @@ main.center .primary { margin-top: 14px; min-width: 240px; }
 .legend .dot { width: 8px; height: 8px; border-radius: 50%; }
 .legend .dot.lift { background: var(--lift); } .legend .dot.ride { background: var(--ride); }
 .legend .dot.other { background: var(--other); }
-.legend .stepsnum { font-size: .72rem; font-weight: 600; color: var(--accent-2); font-variant-numeric: tabular-nums; }
+.legend .stepsnum { font-weight: 600; color: var(--accent-2); } /* same purple as the step counts in the cells */
 .cell .other { position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--other); }
 .addrow.today { margin-bottom: 0; }
 .addrow.today .chip { text-decoration: none; color: var(--fg); max-width: 100%; }

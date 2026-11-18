@@ -169,13 +169,38 @@
 
   /* ---- daily checklist: meds, Metamucil, water (500 ml steps) ---- */
 
-  var WATER_STEP = 500, WATER_MAX = 10000;
+  /* The ‹ › arrows on the card pick the day, so a forgotten day can be filled
+     in later (up to CK_BACK days back). Each day's last known state is kept in
+     ckCache; saves are queued per day so switching days mid-save loses nothing. */
+  var WATER_STEP = 500, WATER_MAX = 10000, CK_BACK = 30;
   var ck = { day: null, meds: false, metamucil: false, water_ml: 0 };
-  var ckSaving = false, ckDirty = false;
+  var ckView = null;        // the day shown; null = follow today
+  var ckCache = {};         // day -> {meds, metamucil, water_ml}
+  var ckSavingDay = null;   // day whose save is in flight
+  var ckQueue = {};         // day -> latest unsaved state
+  var ckLoading = true, ckSeq = 0;
+
+  function ckDay() { return ckView || P.today(); }
+  function ckEarliest() { return P.fmtDay(P.addDays(P.parseDay(P.today()), -CK_BACK)); }
+
+  function ckLabel(day) {
+    var t = P.today();
+    if (day === t) return "Today";
+    if (day === P.fmtDay(P.addDays(P.parseDay(t), -1))) return "Yesterday";
+    return P.nice(day);
+  }
 
   function renderChecklist() {
+    var day = ckDay(), past = day !== P.today();
+    $("ck-label").textContent = ckLabel(day);
+    $("ck-today").hidden = !past;
+    $("ck-prev").disabled = day <= ckEarliest();
+    $("ck-next").disabled = !past;
+    $("checklist").classList.toggle("past", past);
+    $("checklist").classList.toggle("loading", ckLoading);
     document.querySelectorAll("#checklist .check").forEach(function (b) {
       b.setAttribute("aria-pressed", ck[b.dataset.item] ? "true" : "false");
+      b.disabled = ckLoading;
     });
     var out = $("water-ml");
     out.textContent = P.litres(ck.water_ml); // stored in ml, shown in L
@@ -183,42 +208,72 @@
     u.textContent = "L";
     out.appendChild(u);
     $("water").classList.toggle("some", ck.water_ml > 0);
-    $("water-minus").disabled = ck.water_ml <= 0;
-    $("water-plus").disabled = ck.water_ml >= WATER_MAX;
+    $("water-minus").disabled = ckLoading || ck.water_ml <= 0;
+    $("water-plus").disabled = ckLoading || ck.water_ml >= WATER_MAX;
+  }
+
+  function showDay(day, d) {
+    ck = { day: day, meds: !!d.meds, metamucil: !!d.metamucil, water_ml: d.water_ml || 0 };
   }
 
   function loadChecklist() {
-    var t = P.today();
-    return K.db.from("checklist").select("meds, metamucil, water_ml").eq("day", t).maybeSingle()
+    var day = ckDay(), seq = ++ckSeq;
+    var cached = ckCache[day];
+    ckLoading = !cached; // a day seen before shows at once and refreshes quietly
+    showDay(day, cached || {});
+    renderChecklist();
+    return K.db.from("checklist").select("meds, metamucil, water_ml").eq("day", day).maybeSingle()
       .then(function (r) {
-        if (r.error) { K.showError(r.error.message); return; }
-        if (ckSaving || ckDirty) return; // a tap is on its way; keep what's on screen
-        var d = r.data || {};
-        ck = { day: t, meds: !!d.meds, metamucil: !!d.metamucil, water_ml: d.water_ml || 0 };
+        if (seq !== ckSeq) return; // switched to another day meanwhile
+        if (r.error) { K.showError(r.error.message); ckLoading = false; renderChecklist(); return; }
+        ckLoading = false;
+        // A tap for this day is on its way: keep what's on screen.
+        if (ckSavingDay !== day && !ckQueue[day]) {
+          var d = r.data || {};
+          ckCache[day] = { meds: !!d.meds, metamucil: !!d.metamucil, water_ml: d.water_ml || 0 };
+          showDay(day, ckCache[day]);
+        }
         renderChecklist();
       });
   }
 
-  // One save in flight at a time; taps made meanwhile go in the next save.
+  // One save in flight at a time; taps made meanwhile wait in ckQueue (per day).
   function saveChecklist() {
-    if (ckSaving) { ckDirty = true; return; }
-    ckSaving = true; ckDirty = false;
+    if (ckSavingDay) return;
+    var day = Object.keys(ckQueue)[0];
+    if (!day) return;
+    var s = ckQueue[day];
+    delete ckQueue[day];
+    ckSavingDay = day;
     K.db.from("checklist").upsert({
-      day: ck.day, meds: ck.meds, metamucil: ck.metamucil, water_ml: ck.water_ml,
+      day: day, meds: s.meds, metamucil: s.metamucil, water_ml: s.water_ml,
       updated_at: new Date().toISOString()
     }, { onConflict: "user_id,day" }).then(function (r) {
-      ckSaving = false;
+      ckSavingDay = null;
       if (r.error) K.showError("Couldn't save the checklist: " + r.error.message);
       else K.showError("");
-      if (ckDirty) saveChecklist();
+      saveChecklist();
     });
   }
 
   function changeChecklist(fn) {
-    if (ck.day !== P.today()) { loadChecklist(); return; } // it's a new day: start fresh
+    // Following today and the date rolled over: start the new day fresh.
+    if (!ckView && ck.day !== P.today()) { loadChecklist(); return; }
+    if (ckLoading) return;
     fn();
+    var s = { meds: ck.meds, metamucil: ck.metamucil, water_ml: ck.water_ml };
+    ckCache[ck.day] = s;
+    ckQueue[ck.day] = s;
     renderChecklist();
     saveChecklist();
+  }
+
+  function moveChecklist(n) {
+    var t = P.today();
+    var day = P.fmtDay(P.addDays(P.parseDay(ckDay()), n));
+    if (day > t || day < ckEarliest()) return;
+    ckView = day === t ? null : day;
+    loadChecklist();
   }
 
   /* ---- month calendar ---- */
@@ -376,9 +431,18 @@
     $("water-minus").addEventListener("click", function () {
       changeChecklist(function () { ck.water_ml = Math.max(0, Math.ceil(ck.water_ml / WATER_STEP) * WATER_STEP - WATER_STEP); });
     });
-    // Coming back to the app on a new day shows a fresh checklist.
+    $("ck-prev").addEventListener("click", function () { moveChecklist(-1); });
+    $("ck-next").addEventListener("click", function () { moveChecklist(1); });
+    $("ck-today").addEventListener("click", function () { ckView = null; loadChecklist(); });
+    // Coming back to the app on a new day shows a fresh checklist (a past day
+    // being filled in stays put).
+    var homeDay = P.today();
     document.addEventListener("visibilitychange", function () {
-      if (!document.hidden && ck.day && ck.day !== P.today()) { load(); loadChecklist(); }
+      if (document.hidden || homeDay === P.today()) return;
+      homeDay = P.today();
+      load();
+      if (ckView && ckView < ckEarliest()) ckView = null;
+      loadChecklist();
     });
     renderChecklist();
     loadChecklist();

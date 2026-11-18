@@ -52,6 +52,16 @@
   <h2>Today</h2>
   <div class="addrow today" id="today"></div>
   <div class="card checklist" id="checklist">
+    <div class="ckday">
+      <button type="button" class="iconbtn" id="ck-prev" aria-label="Previous day">
+        <svg class="i" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <div class="ckday-mid">
+        <strong id="ck-label" aria-live="polite">Today</strong>
+        <button type="button" class="link small" id="ck-today" hidden>Back to today</button>
+      </div>
+      <button type="button" class="iconbtn" id="ck-next" aria-label="Next day" disabled>
+        <svg class="i" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
     <button type="button" class="check" data-item="meds" aria-pressed="false">
       <span class="box"><svg class="i" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>Meds</button>
     <button type="button" class="check" data-item="metamucil" aria-pressed="false">
